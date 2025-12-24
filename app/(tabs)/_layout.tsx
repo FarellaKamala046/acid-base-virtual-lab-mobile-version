@@ -1,11 +1,10 @@
-import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
+import React from 'react';
 import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import Colors from '@/constants/Colors';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -21,10 +20,22 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
+        tabBarActiveTintColor: '#3b82f6', // Warna biru saat menu diklik
+        tabBarInactiveTintColor: '#9ca3af', // Warna abu saat menu tidak diklik
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 0,
+          elevation: 10, // Efek bayangan di Android
+          shadowOpacity: 0.1, // Efek bayangan di iOS
+          height: 65, // Biar agak tinggian dikit, lebih lega
+          paddingBottom: 10,
+          paddingTop: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+        headerShown: false, // Sembunyikan header atas biar gak double-double
       }}>
       <Tabs.Screen
         name="index"
@@ -52,6 +63,13 @@ export default function TabLayout() {
         options={{
           title: 'Tab Two',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="VirtualLab" // Harus sama dengan nama file tadi
+        options={{
+          title: 'Virtual Lab',
+          tabBarIcon: ({ color }) => <FontAwesome name="flask" color={color} size={24} />,
         }}
       />
     </Tabs>
