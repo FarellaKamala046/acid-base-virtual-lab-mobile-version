@@ -3,8 +3,6 @@ import { Link, Tabs } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
 
-import { useColorScheme } from '@/components/useColorScheme';
-import Colors from '@/constants/Colors';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -15,7 +13,6 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
   return (
     <Tabs
@@ -49,7 +46,6 @@ export default function TabLayout() {
                   <FontAwesome
                     name="info-circle"
                     size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}

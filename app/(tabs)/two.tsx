@@ -1,31 +1,17 @@
-import { StyleSheet } from 'react-native';
-
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
 
 export default function TabTwoScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tab Two</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/two.tsx" />
+      <Text style={styles.subtitle}>Halaman ini sudah tidak pakai template Expo.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
+  container: { flex: 1, alignItems: "center", justifyContent: "center", padding: 16 },
+  title: { fontSize: 22, fontWeight: "700" },
+  subtitle: { marginTop: 8, fontSize: 14, opacity: 0.7, textAlign: "center" },
 });
