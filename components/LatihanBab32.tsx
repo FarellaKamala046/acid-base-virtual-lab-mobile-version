@@ -1,40 +1,19 @@
-// LatihanBab3Kalkulator.tsx
-import { doc, setDoc } from "firebase/firestore";
-import { Check, RefreshCcw, X } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import { Check, RefreshCcw, X } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 
-type StepBase = {
-  id: string;
-  prompt: string;
-};
-
-type StepInput = StepBase & {
-  kind: "input";
-  answer: string;
-  unit?: string; // ✅ bikin optional biar aman
-  calculation: (molarity: number, valence: number) => number;
-};
-
-type StepChoice = StepBase & {
-  kind: "choice";
-  answer: string;
-  options: string[];
-};
-
-type StepCalc = StepBase & {
-  kind: "calc";
-  answer: string;
-  calculation: (hPlus: number) => number;
-};
-
-type Step = StepInput | StepChoice | StepCalc;
+// --- Definisi Tipe Data Ken ---
+type Step = 
+  | { id: string; kind: "input"; prompt: string; answer: string; unit?: string; calculation: (m: number, v: number) => number }
+  | { id: string; kind: "choice"; prompt: string; answer: string; options: string[] }
+  | { id: string; kind: "calc"; prompt: string; answer: string; calculation: (h: number) => number };
 
 type Problem = {
   id: string;
   text: string;
-  type: "strong_acid" | "strong_base" | "weak_acid" | "weak_base";
   molarity: number;
   valence: number;
   steps: Step[];
@@ -43,113 +22,55 @@ type Problem = {
 const PROBLEM: Problem = {
   id: "ph_hcl_001",
   text: "Hitung pH larutan HCl 0.01 M!",
-  type: "strong_acid",
   molarity: 0.01,
   valence: 1,
   steps: [
-    {
-      id: "step1",
-      kind: "input",
-      prompt: "Tentukan konsentrasi [H⁺] (dalam M):",
-      answer: "0.01",
-      unit: "M",
-      calculation: (m, v) => m * v,
-    },
-    {
-      id: "step2",
-      kind: "choice",
-      prompt: "Masukkan rumus pH:",
-      answer: "-log[H+]",
-      options: ["-log[H+]", "14+log[OH-]", "-log[OH-]"],
-    },
-    {
-      id: "step3",
-      kind: "calc",
-      prompt: "Hitung nilai pH:",
-      answer: "2",
-      calculation: (hPlus) => (hPlus ? -Math.log10(hPlus) : NaN),
-    },
+    { id: "step1", kind: "input", prompt: "Tentukan konsentrasi [H⁺] (dalam M):", answer: "0.01", unit: "M", calculation: (m, v) => m * v },
+    { id: "step2", kind: "choice", prompt: "Masukkan rumus pH:", answer: "-log[H+]", options: ["-log[H+]", "14+log[OH-]", "-log[OH-]"] },
+    { id: "step3", kind: "calc", prompt: "Hitung nilai pH:", answer: "2", calculation: (h) => (h ? -Math.log10(h) : 0) },
   ],
 };
 
-type StepStatus = "correct" | "incorrect";
-type StepStatusMap = Record<string, StepStatus | undefined>;
-type InputsMap = Record<string, string>;
-
-export default function LatihanBab3Kalkulator(): React.ReactElement {
-  const { currentUser, userScores, refreshUserScores } = useAuth();
-
-  const [userInputs, setUserInputs] = useState<InputsMap>({});
-  const [stepStatus, setStepStatus] = useState<StepStatusMap>({});
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+export default function LatihanBab3() {
+  const { currentUser, userScores, refreshUserScores } = useAuth() as any;
+  const [userInputs, setUserInputs] = useState<Record<string, string>>({});
+  const [stepStatus, setStepStatus] = useState<Record<string, "correct" | "incorrect" | undefined>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState<{ score: number } | null>(null);
 
-  const correctAnswers = useMemo<Record<string, string>>(() => {
-    const answers: Record<string, string> = {};
-
-    const step1 = PROBLEM.steps.find((s) => s.id === "step1");
-    const step2 = PROBLEM.steps.find((s) => s.id === "step2");
-    const step3 = PROBLEM.steps.find((s) => s.id === "step3");
-
-    if (!step1 || step1.kind !== "input") return answers;
-
-    const hPlus = step1.calculation(PROBLEM.molarity, PROBLEM.valence);
-    answers["step1"] = String(hPlus);
-
-    if (step2 && step2.kind === "choice") {
-      answers["step2"] = step2.answer;
-    }
-
-    if (step3 && step3.kind === "calc") {
-      answers["step3"] = String(step3.calculation(hPlus));
-    }
-
-    return answers;
+  // Kalkulasi Jawaban Benar (Gaya Ken)
+  const correctAnswers = useMemo(() => {
+    const hPlus = PROBLEM.molarity * PROBLEM.valence;
+    return {
+      step1: String(hPlus),
+      step2: "-log[H+]",
+      step3: String(-Math.log10(hPlus)),
+    };
   }, []);
 
-  const handleInputChange = (stepId: string, value: string) => {
-    setUserInputs((prev) => ({ ...prev, [stepId]: value }));
-    if (isSubmitted) {
-      setStepStatus((prev) => ({ ...prev, [stepId]: undefined }));
-    }
-  };
-
   const handleSubmit = async () => {
-    let correctCount = 0;
-    const newStepStatus: StepStatusMap = {};
+    let benar = 0;
+    const newStatus: any = {};
 
     PROBLEM.steps.forEach((step) => {
-      const userAnswer = (userInputs[step.id] ?? "").trim();
-      const correct = (correctAnswers[step.id] ?? "").trim();
-      const isCorrect = userAnswer === correct;
-
-      newStepStatus[step.id] = isCorrect ? "correct" : "incorrect";
-      if (isCorrect) correctCount++;
+      const input = (userInputs[step.id] ?? "").trim();
+      const answer = (correctAnswers as any)[step.id];
+      const isCorrect = input === answer;
+      newStatus[step.id] = isCorrect ? "correct" : "incorrect";
+      if (isCorrect) benar++;
     });
 
-    setStepStatus(newStepStatus);
+    const finalScore = Math.round((benar / PROBLEM.steps.length) * 100);
+    setStepStatus(newStatus);
 
-    const finalScore = Math.round((correctCount / PROBLEM.steps.length) * 100);
-
-    if (currentUser) {
+    if (currentUser?.uid) {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);
-        // helper aman untuk ambil angka dari userScores (karena tipe userScores = Record<string, unknown>)
-const getScore = (key: string): number => {
-  const v = (userScores as Record<string, unknown>)?.[key];
-  return typeof v === "number" && Number.isFinite(v) ? v : 0;
-};
-
-await setDoc(
-  userRef,
-  { Bab3Score: Math.max(finalScore, getScore("Bab3Score")) },
-  { merge: true }
-);
-
+        await setDoc(userRef, { 
+          Bab3Score: finalScore // Langsung simpan nilai terbaru Kenlyn
+        }, { merge: true });
         await refreshUserScores?.();
-      } catch (error) {
-        console.error("Gagal menyimpan skor Bab 3 (Kalkulator):", error);
-      }
+      } catch (e) { console.error("Firebase Error:", e); }
     }
 
     setIsSubmitted(true);
@@ -159,136 +80,111 @@ await setDoc(
   const handleReset = () => {
     setUserInputs({});
     setStepStatus({});
-    setIsSubmitted(false); // ✅ benerin bug: tadi setIsFinished
+    setIsSubmitted(false);
     setQuizResult(null);
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Latihan Menghitung pH</h2>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* <Text style={styles.title}>Latihan Menghitung pH</Text> */}
+      
+      <View style={styles.problemBox}>
+        <Text style={styles.problemText}>{PROBLEM.text}</Text>
+      </View>
 
-      <div className="p-4 bg-yellow-50 rounded-lg shadow-inner text-center font-medium">
-        {PROBLEM.text}
-      </div>
+      {PROBLEM.steps.map((step, index) => (
+        <View key={step.id} style={[
+          styles.stepCard, 
+          isSubmitted && (stepStatus[step.id] === "correct" ? styles.cardCorrect : styles.cardIncorrect)
+        ]}>
+          <Text style={styles.label}>Langkah {index + 1}: {step.prompt}</Text>
 
-      <div className="space-y-4">
-        {PROBLEM.steps.map((step, index) => {
-          const status = stepStatus[step.id];
+          {step.kind !== "choice" ? (
+            <View style={styles.inputRow}>
+              <TextInput
+                style={[styles.input, isSubmitted && styles.inputDisabled]}
+                value={userInputs[step.id] ?? ""}
+                onChangeText={(val) => setUserInputs(p => ({...p, [step.id]: val}))}
+                editable={!isSubmitted}
+                placeholder="0.0..."
+                keyboardType="numeric"
+              />
+              {step.kind === "input" && <Text style={styles.unitText}>{step.unit}</Text>}
+              {isSubmitted && (stepStatus[step.id] === "correct" ? <Check color="green" size={20} /> : <X color="red" size={20} />)}
+            </View>
+          ) : (
+            <View style={styles.choiceRow}>
+              {step.options.map(opt => (
+                <TouchableOpacity 
+                  key={opt}
+                  onPress={() => setUserInputs(p => ({...p, [step.id]: opt}))}
+                  disabled={isSubmitted}
+                  style={[
+                    styles.choiceBtn,
+                    userInputs[step.id] === opt && styles.choiceSelected,
+                    isSubmitted && userInputs[step.id] === opt && (stepStatus[step.id] === "correct" ? styles.btnCorrect : styles.btnIncorrect)
+                  ]}
+                >
+                  <Text style={styles.choiceText}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      ))}
 
-          return (
-            <div
-              key={step.id}
-              className={`p-4 border rounded-lg ${
-                isSubmitted
-                  ? status === "correct"
-                    ? "border-green-300 bg-green-50"
-                    : "border-red-300 bg-red-50"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <label htmlFor={step.id} className="block text-sm font-medium text-gray-700 mb-2">
-                Langkah {index + 1}: {step.prompt}
-              </label>
+      {quizResult && (
+        <View style={[styles.resultBox, quizResult.score === 100 ? styles.resGreen : styles.resBlue]}>
+          <Text style={styles.resTitle}>{quizResult.score === 100 ? "SELAMAT! SKOR SEMPURNA!" : "Hasil Latihanmu"}</Text>
+          <Text style={styles.resScore}>{quizResult.score} / 100</Text>
+        </View>
+      )}
 
-              {/* INPUT */}
-              {step.kind !== "choice" && (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    id={step.id}
-                    value={userInputs[step.id] ?? ""}
-                    onChange={(e) => handleInputChange(step.id, e.target.value)}
-                    disabled={isSubmitted}
-                    className={`flex-grow px-3 py-2 border rounded-md shadow-sm focus:outline-none ${
-                      isSubmitted
-                        ? status === "correct"
-                          ? "border-green-500 bg-green-100"
-                          : "border-red-500 bg-red-100"
-                        : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    } ${isSubmitted ? "cursor-not-allowed" : ""}`}
-                  />
-
-                  {/* ✅ aman: unit cuma untuk StepInput */}
-                  {step.kind === "input" && step.unit ? (
-                    <span className="text-gray-500">{step.unit}</span>
-                  ) : null}
-
-                  {isSubmitted && status === "correct" && <Check className="w-5 h-5 text-green-600" />}
-                  {isSubmitted && status === "incorrect" && <X className="w-5 h-5 text-red-600" />}
-                </div>
-              )}
-
-              {/* CHOICE BUTTONS */}
-              {step.kind === "choice" && (
-                <div className="flex space-x-2">
-                  {step.options.map((option) => {
-                    const selected = userInputs[step.id] === option;
-
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => handleInputChange(step.id, option)}
-                        disabled={isSubmitted}
-                        className={`px-3 py-2 border rounded-md shadow-sm text-sm ${
-                          selected
-                            ? isSubmitted
-                              ? status === "correct"
-                                ? "bg-green-200 border-green-500 ring-2 ring-green-300"
-                                : "bg-red-200 border-red-500 ring-2 ring-red-300"
-                              : "bg-blue-100 border-blue-400 ring-2 ring-blue-200"
-                            : "bg-white border-gray-300 hover:bg-gray-50"
-                        } ${isSubmitted ? "cursor-not-allowed opacity-70" : ""}`}
-                      >
-                        <code>{option}</code>
-                      </button>
-                    );
-                  })}
-
-                  {isSubmitted && status === "correct" && (
-                    <Check className="w-5 h-5 text-green-600 self-center" />
-                  )}
-                  {isSubmitted && status === "incorrect" && (
-                    <X className="w-5 h-5 text-red-600 self-center" />
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="border-t mt-6 pt-4 space-y-4">
-        {quizResult && (
-          <div
-            className={`p-4 rounded-xl ${
-              quizResult.score === 100 ? "bg-green-50 border-green-400" : "bg-blue-50 border-blue-400"
-            } border-2`}
-          >
-            <p className="text-lg font-bold mb-1">Hasil Perhitungan pH:</p>
-            <div className="flex items-baseline justify-between">
-              <p className="text-2xl font-extrabold text-blue-700">Skor: {quizResult.score} / 100</p>
-            </div>
-          </div>
-        )}
-
-        <div className="flex space-x-4">
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitted}
-            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
-          >
-            Cek Jawaban Keseluruhan
-          </button>
-
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors flex items-center gap-1 text-sm"
-          >
-            <RefreshCcw className="w-4 h-4" /> Ulangi
-          </button>
-        </div>
-      </div>
-    </div>
+      <View style={styles.actionRow}>
+        <TouchableOpacity 
+          style={[styles.btnMain, isSubmitted && styles.btnDisabled]} 
+          onPress={handleSubmit} 
+          disabled={isSubmitted}
+        >
+          <Text style={styles.btnMainText}>{isSubmitted ? "Jawaban Terkunci" : "Cek Jawaban"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btnReset} onPress={handleReset}>
+          <RefreshCcw size={18} color="#4b5563" />
+          <Text style={styles.btnResetText}>Ulangi</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16, paddingBottom: 40 },
+  title: { fontSize: 20, fontWeight: "800", marginBottom: 15, color: "#111827" },
+  problemBox: { backgroundColor: "#FEFCE8", padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: "#FDE68A" },
+  problemText: { textAlign: "center", fontWeight: "700", color: "#854d0e", fontSize: 16 },
+  stepCard: { padding: 16, borderRadius: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", marginBottom: 12 },
+  cardCorrect: { backgroundColor: "#f0fdf4", borderColor: "#86efac" },
+  cardIncorrect: { backgroundColor: "#fef2f2", borderColor: "#fca5a5" },
+  label: { fontSize: 14, fontWeight: "700", color: "#374151", marginBottom: 10 },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  input: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 8, padding: 10, backgroundColor: "#fff", fontSize: 14 },
+  inputDisabled: { backgroundColor: "#f3f4f6", color: "#9ca3af" },
+  unitText: { fontWeight: "bold", color: "#6b7280" },
+  choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  choiceBtn: { paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 8, backgroundColor: "#fff" },
+  choiceSelected: { backgroundColor: "#eff6ff", borderColor: "#3b82f6" },
+  choiceText: { fontSize: 13, fontWeight: "700" },
+  btnCorrect: { backgroundColor: "#bbf7d0", borderColor: "#22c55e" },
+  btnIncorrect: { backgroundColor: "#fecaca", borderColor: "#ef4444" },
+  resultBox: { padding: 16, borderRadius: 15, borderWidth: 2, marginTop: 10 },
+  resBlue: { backgroundColor: "#eff6ff", borderColor: "#93c5fd" },
+  resGreen: { backgroundColor: "#ecfdf5", borderColor: "#86efac" },
+  resTitle: { fontWeight: "800", fontSize: 16, color: "#111827" },
+  resScore: { fontSize: 26, fontWeight: "900", color: "#2563eb", marginTop: 4 },
+  actionRow: { flexDirection: "row", gap: 10, marginTop: 15 },
+  btnMain: { flex: 1, backgroundColor: "#2563eb", padding: 15, borderRadius: 12, alignItems: "center" },
+  btnMainText: { color: "#fff", fontWeight: "800", fontSize: 14 },
+  btnDisabled: { backgroundColor: "#9ca3af" },
+  btnReset: { flexDirection: "row", gap: 6, backgroundColor: "#e5e7eb", paddingHorizontal: 15, borderRadius: 12, alignItems: "center" },
+  btnResetText: { fontWeight: "700", color: "#4b5563" },
+});1  

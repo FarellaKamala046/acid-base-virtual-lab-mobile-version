@@ -55,7 +55,7 @@ export default function Bab3() {
       {/* 5. Asam Kuat dan Basa Kuat */}
       <Text style={styles.h2}>5. Asam Kuat dan Basa Kuat</Text>
       <Text style={styles.p}>
-        Asam/Basa Kuat adalah yang terionisasi na (100%) dalam air. Contoh umum:
+        Asam/Basa Kuat adalah yang terionisasi sempurna (100%) dalam air. Contoh umum:
       </Text>
       <View style={styles.listContainer}>
         <Text style={styles.listItemSmall}>• <Text style={styles.bold}>Asam Kuat:</Text> HCl, H₂SO₄, HNO₃</Text>
@@ -64,7 +64,6 @@ export default function Bab3() {
 
       {/* 6. Menghitung pH */}
       <Text style={styles.h2}>6. Menghitung pH Asam Kuat dan Basa Kuat</Text>
-      
       <Text style={styles.pBold}>Untuk Asam Kuat:</Text>
       <View style={[styles.codeBlock, { backgroundColor: '#f0fdf4' }]}>
         <Text style={styles.codeText}>[H⁺] = Molaritas Asam × valensi (a)</Text>

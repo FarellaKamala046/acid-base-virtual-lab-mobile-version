@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { auth } from '../../firebaseConfig'; // Pastikan path benar
+import userProfileImg from "../../assets/images/user-profile.jpg";
 
 // Import Assets
 import materiImage from '../../assets/images/course.jpg';
@@ -23,6 +24,8 @@ import latihanGif from '../../assets/images/latihan.gif';
 import pembelajaranGif from '../../assets/images/pembelajaran.webp';
 import kuisImage from '../../assets/images/quiz.jpg';
 import visualGif from '../../assets/images/visualisasi.gif';
+import { useAuth } from '@/context/AuthContext';
+import { LogOut } from 'lucide-react-native';
 
 function FeatureCard({ imageSrc, title, description, onPress }: any) {
   return (
@@ -50,6 +53,7 @@ function KeyFeatureCard({ imageSrc, title, description }: any) {
 export default function HomePage() { 
   const [user, setUser] = React.useState<any>(null);
   const router = useRouter();
+  const { logout } = useAuth() as any;
 
   // Efek buat mantau login user secara real-time
   React.useEffect(() => {
@@ -71,6 +75,15 @@ export default function HomePage() {
     }
   };
 
+  const handleLogout = async () => {
+  try {
+    await logout();
+    // Biasanya otomatis redirect ke Login karena AuthContext
+  } catch (error) {
+    console.error("Gagal logout:", error);
+  }
+};
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -80,9 +93,18 @@ export default function HomePage() {
         <Text style={styles.brandText}>AcidBaseVLab</Text>
         
         {isLoggedIn ? (
-          <TouchableOpacity onPress={() => Alert.alert("Profil", "Ini halaman profil Ken!")}>
-            <Image source={{ uri: userPhoto }} style={styles.profileImage} />
-          </TouchableOpacity>
+          <View style={styles.profileRow}>
+            <TouchableOpacity onPress={() => Alert.alert("Profil", "Ini halaman profil Ken!")}>
+              <Image source={userProfileImg} style={styles.profileImage} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.logoutIconBtn} 
+              onPress={handleLogout}
+            >
+              <LogOut size={20} color="#ef4444" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity 
             style={styles.loginButtonSmall} 
@@ -203,6 +225,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  profileRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10, // Jarak antara foto dan icon logout Ken
+    },
+
+    logoutIconBtn: {
+      padding: 8,
+      backgroundColor: '#FEF2F2', // Background merah muda transparan biar cakep
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   container: { flex: 1, backgroundColor: '#f9fafb' },
   heroSection: {
     backgroundColor: '#3b82f6', 

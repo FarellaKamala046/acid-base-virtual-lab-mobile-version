@@ -1,25 +1,21 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { AuthProvider } from '../context/AuthContext'; // Sesuaikan path-nya ya Ken!
-import { Stack } from 'expo-router';
+import { AuthProvider } from '../context/AuthContext'; 
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
-
+import { HeaderBackButton } from '@react-navigation/elements';
+import { View, Text, StyleSheet } from 'react-native';
 
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -28,7 +24,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -44,7 +39,6 @@ export default function RootLayout() {
   }
 
   return (
-    // INI KUNCINYA! Bungkus semua dengan AuthProvider
     <AuthProvider>
       <RootLayoutNav />
     </AuthProvider>
@@ -52,34 +46,47 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-
+  const router = useRouter();
   return (
-      <Stack>
-        {/* 1. Folder Utama (Tabs) */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
-        {/* 2. Halaman Login (Biar ada tombol Back tulisan 'Back') */}
-        <Stack.Screen 
-          name="Login" 
-          options={{ 
-            headerTitle: 'Masuk Akun',
-            headerBackTitle: 'Back', // Ini kuncinya biar gak tulisan (tabs)
-            headerShown: true 
-          }} 
-        />
+    <Stack>
+      {/* 1. Folder Utama (Tabs) */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      
+      {/* 2. Halaman Login (Back Button Biru dengan Teks 'Back') ✨ */}
+      <Stack.Screen 
+        name="Login" 
+        options={{ 
+          headerTitle: 'Masuk Akun',
+          headerShown: true,
+          // headerBackVisible: true,     // Pastikan tombol back muncul
+          headerBackTitle: 'Back',      // Memaksa teks jadi "Back", bukan "(tabs)"
+          headerTintColor: '#007AFF',   // Warna biru khas iOS untuk tombol back
+          // animation: 'slide_from_right',
+          headerLeft: (props) => (
+            <View style={{ marginLeft: -15, flexDirection: 'row', alignItems: 'center' }}> 
+              <HeaderBackButton
+                {...props}
+                label="Back"
+                onPress={() => router.replace('/(tabs)')} 
+              />
+            </View>
+          ),
+        }} 
+      />
 
-        {/* 3. Halaman Register */}
-        <Stack.Screen 
-          name="Register" 
-          options={{ 
-            headerTitle: 'Daftar Baru',
-            headerBackTitle: 'Back',
-            headerShown: true 
-          }} 
-        />
+      {/* 3. Halaman Register ✨ */}
+      <Stack.Screen 
+        name="Register" 
+        options={{ 
+          headerTitle: 'Daftar Baru',
+          headerShown: true,
+          headerBackVisible: true,
+          headerBackTitle: 'Back',
+          headerTintColor: '#007AFF',
+        }} 
+      />
 
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }
-

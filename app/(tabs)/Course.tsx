@@ -12,14 +12,19 @@ import YoutubePlayer from "react-native-youtube-iframe";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from "../../context/AuthContext";
+import { Award, CheckCircle2 } from "lucide-react-native";
 
 // Import Chapters
 import Bab1 from '../course-chapters/Bab1';
 import Bab2 from '../course-chapters/Bab2';
+import Bab3 from '../course-chapters/Bab3';
+import Bab4 from '../course-chapters/Bab4';
 
 // Import Latihan (Pastikan path-nya benar ya Ken!)
 import LatihanBab1 from '../../components/LatihanBab1';
 import LatihanBab2 from '../../components/LatihanBab2';
+import LatihanBab3 from '../../components/LatihanBab32';
+import LatihanBab4 from '../../components/LatihanBab4';
 
 export default function CourseScreen() {
   const { userScores } = useAuth() as any;
@@ -49,6 +54,20 @@ export default function CourseScreen() {
         content: Bab2, 
         exercise: LatihanBab2, 
       },
+      {
+        id: 'm3_ph',
+        title: 'Bab 3: Skala pH dan Perhitungan',
+        youtubeId: 'DupXDD87oHc',
+        content: Bab3, 
+        exercise: LatihanBab3, 
+      },
+      {
+        id: 'm4_reaksi',
+        title: 'Bab 4: Reaksi Asam Basa',
+        youtubeId: 'khJGRvx61_8',
+        content: Bab4, 
+        exercise: LatihanBab4, 
+      },
     ];
   }, [userScores]);
 
@@ -71,7 +90,11 @@ export default function CourseScreen() {
             // Anggap saja kita ambil skor berdasarkan ID bab
             // Misalnya: m1_intro -> Bab1, m2_teori -> Bab2
             const babKey = topic.id === 'm1_intro' ? 'Bab1' : 'Bab2';
-            const score = topic.id === 'm1_intro' ? userScores?.Bab1Score : userScores?.Bab2Score;
+            const score =
+              topic.id === 'm1_intro' ? userScores?.Bab1Score :
+              topic.id === 'm2_teori' ? userScores?.Bab2Score :
+              topic.id === 'm3_ph' ? userScores?.Bab3Score :
+              userScores?.Bab4Score;
             const isDone = score > 0;
 
             return (
@@ -86,12 +109,24 @@ export default function CourseScreen() {
                 </Text>
 
                 {/* CONTAINER SKOR & STATUS ✨ */}
-                <View style={[styles.badgeContainer, isDone ? styles.badgeDone : styles.badgePending]}>
-                  <Text style={[styles.badgeText, selectedTopic.id === topic.id && styles.activeText]}>
-                    {isDone 
-                      ? `⭐ ${score}/100 | ✅ Selesai` 
-                      : `⭐ 0/100 | ⏳ Belum Selesai`}
-                  </Text>
+                <View style={styles.scoreInfoRow}>
+                  {/* Icon Nilai (Medal/Award) ✨ */}
+                  <View style={styles.scoreItem}>
+                    <Award size={16} color="#3b82f6" />
+                    <Text style={styles.scoreValueText}>
+                      Nilai: {score}/100
+                    </Text>
+                  </View>
+
+                  {/* Icon Selesai ✨ */}
+                  {score > 0 && (
+                    <View style={styles.scoreItem}>
+                      <CheckCircle2 size={16} color="#22c55e" />
+                      <Text style={styles.statusDoneText}>
+                        Selesai
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -120,9 +155,17 @@ export default function CourseScreen() {
 
             {/* LATIHAN (LANGSUNG TAMPIL) */}
             <View style={styles.exerciseSectionCard}>
-              <Text style={styles.exerciseSectionTitle}>Latihan Uji Indikator Lakmus</Text>
+              <Text style={styles.exerciseSectionTitle}>
+                {selectedTopic.id === 'm1_intro' && "Latihan Uji Indikator Lakmus"}
+                {selectedTopic.id === 'm2_teori' && "Latihan Klasifikasi Teori"}
+                {selectedTopic.id === 'm3_ph' && "Latihan Perhitungan pH"}
+                {selectedTopic.id === 'm4_reaksi' && "Latihan Pengenalan Alat"}
+              </Text>
               <Text style={styles.exerciseSectionDesc}>
-                Geser kertas lakmus ke Larutan A, B, atau C. Amati perubahan, lalu tentukan sifat larutan.
+                {selectedTopic.id === 'm1_intro' && "Geser kertas lakmus ke Larutan A, B, atau C. Amati perubahannya, lalu tentukan sifat larutan tersebut (Asam/Basa/Netral)"}
+                {selectedTopic.id === 'm2_teori' && "Tap reaksi kimia lalu tap kotak teori yang sesuai untuk mengklasifikasikannya."}
+                {selectedTopic.id === 'm3_ph' && "Ikuti langkah-langkah perhitungan untuk menentukan nilai pH larutan asam kuat."}
+                {selectedTopic.id === 'm4_reaksi' && "Pilih nama alat laboratorium yang tepat untuk setiap gambar yang muncul."}
               </Text>
 
               <View style={styles.exerciseInner}>
@@ -201,7 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     borderRadius: 15, // Lebih round biar estetik
     marginRight: 10,
-    width: 220,    // Dilebarin biar teks "Selesai" gak kepotong
+    width: 240,    // Dilebarin biar teks "Selesai" gak kepotong
     height: 65,       // Kasih tinggi tetap biar seragam
     justifyContent: 'center',
     elevation: 2,
@@ -380,7 +423,27 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#4B5563',
-  }
-
+    color: '#000000ff',
+  },
+  scoreInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12, // Kasih jarak antar item
+      marginTop: 8,
+    },
+    scoreItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4, // Jarak icon ke teks
+    },
+    scoreValueText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#757373ff', // Warna biru tua untuk angka nilai
+    },
+    statusDoneText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#329656ff', // Warna hijau untuk status selesai
+    }
 });

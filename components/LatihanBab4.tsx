@@ -1,320 +1,211 @@
-// src/components/LatihanBab4.tsx
-
 import React, { useMemo, useState } from "react";
-import { RefreshCcw, Check, X } from "lucide-react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import { Check, RefreshCcw, X } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
-// --- Assets (sesuaikan path) ---
+// --- Assets ---
 import imgBuret from "../assets/images/buret.png";
-import imgErlenmeyer from "../assets/erlenmeyer.png";
-import imgGelasKimia from "../assets/gelas-kimia.png";
-import imgPipetTetes from "../assets/pipet-tetes.png";
-import imgPipetVolume from "../assets/pipet-volume.png";
-import imgStatif from "../assets/statif.png";
+import imgErlenmeyer from "../assets/images/erlenmeyer.png";
+import imgGelasKimia from "../assets/images/gelas-kimia.png";
+import imgPipetTetes from "../assets/images/pipet-tetes.png";
+import imgPipetVolume from "../assets/images/pipet-volume.png";
+import imgStatif from "../assets/images/statif.png";
 
-type Equipment = {
-  id: string;
-  name: string;
-  imageSrc: string; // untuk bundler web (Vite/CRA) biasanya string URL hasil import
-};
-
-type Label = {
-  id: string;
-  name: string;
-};
-
-type DroppedLabelsMap = Record<string, string>; // { equipmentId: labelId }
-
-type QuizResult = {
-  score: number;
-  correct: number;
-  total: number;
-} | null;
-
-const EQUIPMENT_LIST: Equipment[] = [
-  { id: "alat_buret", name: "Buret", imageSrc: imgBuret },
-  { id: "alat_erlenmeyer", name: "Labu Erlenmeyer", imageSrc: imgErlenmeyer },
-  { id: "alat_gelas_kimia", name: "Gelas Kimia", imageSrc: imgGelasKimia },
-  { id: "alat_pipet_tetes", name: "Pipet Tetes", imageSrc: imgPipetTetes },
-  { id: "alat_pipet_volume", name: "Pipet Volume", imageSrc: imgPipetVolume },
-  { id: "alat_statif", name: "Statif", imageSrc: imgStatif },
+const EQUIPMENT_LIST = [
+  { id: "alat_buret", name: "Buret", image: imgBuret },
+  { id: "alat_erlenmeyer", name: "Labu Erlenmeyer", image: imgErlenmeyer },
+  { id: "alat_gelas_kimia", name: "Gelas Kimia", image: imgGelasKimia },
+  { id: "alat_pipet_tetes", name: "Pipet Tetes", image: imgPipetTetes },
+  { id: "alat_pipet_volume", name: "Pipet Volume", image: imgPipetVolume },
+  { id: "alat_statif", name: "Statif", image: imgStatif },
 ];
 
-const LABELS: Label[] = EQUIPMENT_LIST.map((item) => ({
-  id: `label_${item.id}`,
-  name: item.name,
-}));
-
-type EquipmentBoxProps = {
-  equipment: Equipment;
-  droppedLabelId?: string;
-  correctLabelId: string;
-  onDrop: (e: React.DragEvent<HTMLDivElement>, targetBoxId: string) => void;
-  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-  isSubmitted: boolean;
-};
-
-function EquipmentBox({
-  equipment,
-  droppedLabelId,
-  correctLabelId,
-  onDrop,
-  onDragOver,
-  isSubmitted,
-}: EquipmentBoxProps) {
-  const droppedLabel = LABELS.find((label) => label.id === droppedLabelId);
-
-  const isCorrect: boolean | undefined = isSubmitted
-    ? droppedLabelId === correctLabelId
-    : undefined;
-
-  const borderStyle =
-    isCorrect === true
-      ? "border-green-500 bg-green-50"
-      : isCorrect === false
-      ? "border-red-500 bg-red-50"
-      : "border-blue-300 hover:border-blue-400";
-
-  return (
-    <div
-      className={`flex flex-col w-full rounded-xl shadow-md overflow-hidden border-2 ${borderStyle} transition-colors duration-200`}
-    >
-      {/* Bagian Atas: Gambar Alat */}
-      <div
-        className={`h-36 bg-blue-50 flex items-center justify-center p-2 border-b-2 ${borderStyle} overflow-hidden`}
-      >
-        <img
-          src={equipment.imageSrc}
-          alt={equipment.name}
-          className="max-h-full max-w-full object-contain"
-        />
-      </div>
-
-      {/* Bagian Bawah: Drop Zone Label */}
-      <div
-        id={equipment.id}
-        onDrop={(e) => onDrop(e, equipment.id)}
-        onDragOver={onDragOver}
-        className="h-20 flex items-center justify-center p-2 text-center relative"
-      >
-        {droppedLabel ? (
-          <span
-            className={`px-3 py-1 rounded-md text-sm font-medium ${
-              isCorrect ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-            }`}
-          >
-            {droppedLabel.name}
-          </span>
-        ) : (
-          <span className="text-xs text-gray-400">
-            Drop Label Nama Alat di Sini
-          </span>
-        )}
-
-        {isSubmitted && (
-          <div className="absolute top-1 right-1">
-            {isCorrect ? (
-              <Check className="w-4 h-4 text-green-600" />
-            ) : (
-              <X className="w-4 h-4 text-red-600" />
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-type DraggableLabelProps = {
-  label: Label;
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, labelId: string) => void;
-  isDropped: boolean;
-};
-
-function DraggableLabel({ label, onDragStart, isDropped }: DraggableLabelProps) {
-  return (
-    <div
-      draggable={!isDropped}
-      id={label.id}
-      onDragStart={(e) => onDragStart(e, label.id)}
-      className={`px-3 py-1.5 bg-blue-100 border border-blue-300 rounded-lg shadow-sm cursor-grab text-sm font-medium text-blue-800 hover:shadow-md ${
-        isDropped ? "opacity-30 cursor-not-allowed line-through" : ""
-      }`}
-    >
-      {label.name}
-    </div>
-  );
-}
-
-export default function LatihanBab4TebakAlat(): React.ReactElement {
+export default function LatihanBab4() {
   const { currentUser, userScores, refreshUserScores } = useAuth() as any;
 
-  const [droppedLabels, setDroppedLabels] = useState<DroppedLabelsMap>({});
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [quizResult, setQuizResult] = useState<QuizResult>(null);
+  const [droppedLabels, setDroppedLabels] = useState<Record<string, string>>({});
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState<{ score: number; correct: number; total: number } | null>(null);
 
-  const shuffledEquipment = useMemo(
-    () => [...EQUIPMENT_LIST].sort(() => Math.random() - 0.5),
-    []
-  );
+  const shuffledEquipment = useMemo(() => [...EQUIPMENT_LIST].sort(() => Math.random() - 0.5), []);
+  const allLabels = useMemo(() => EQUIPMENT_LIST.map(item => ({ id: item.id, name: item.name })), []);
 
-  const shuffledLabels = useMemo(
-    () => [...LABELS].sort(() => Math.random() - 0.5),
-    []
-  );
+  const handlePlaceLabel = (equipmentId: string) => {
+    if (isSubmitted || !selectedLabelId) return;
 
-  const handleDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    labelId: string
-  ) => {
-    e.dataTransfer.setData("labelId", labelId);
-  };
+    const newDropped = { ...droppedLabels };
+    // Bersihkan jika label ini sudah ada di tempat lain
+    Object.keys(newDropped).forEach(key => {
+      if (newDropped[key] === selectedLabelId) delete newDropped[key];
+    });
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetBoxId: string) => {
-    e.preventDefault();
-    const labelId = e.dataTransfer.getData("labelId");
-    if (!labelId) return;
-
-    if (!isSubmitted) {
-      // Hapus label dari box lama kalau sudah kepakai
-      const updated: DroppedLabelsMap = { ...droppedLabels };
-      Object.keys(updated).forEach((k) => {
-        if (updated[k] === labelId) delete updated[k];
-      });
-
-      setDroppedLabels({ ...updated, [targetBoxId]: labelId });
-    }
+    setDroppedLabels({ ...newDropped, [equipmentId]: selectedLabelId });
+    setSelectedLabelId(null);
   };
 
   const handleSubmit = async () => {
     let correctCount = 0;
-
-    shuffledEquipment.forEach((equipment) => {
-      if (droppedLabels[equipment.id] === `label_${equipment.id}`) {
-        correctCount++;
-      }
+    EQUIPMENT_LIST.forEach((item) => {
+      if (droppedLabels[item.id] === item.id) correctCount++;
     });
 
-    const finalScore = Math.round((correctCount / shuffledEquipment.length) * 100);
+    const finalScore = Math.round((correctCount / EQUIPMENT_LIST.length) * 100);
 
-    if (currentUser) {
+    if (currentUser?.uid) {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);
-        await setDoc(
-          userRef,
-          {
-            Bab4Score: Math.max(finalScore, userScores?.Bab4Score || 0),
-          },
-          { merge: true }
-        );
+        await setDoc(userRef, { Bab4Score: finalScore }, { merge: true });
         await refreshUserScores?.();
-      } catch (error) {
-        console.error("Gagal menyimpan skor Bab 4:", error);
-      }
+      } catch (e) { console.error(e); }
     }
 
     setIsSubmitted(true);
-    setQuizResult({
-      score: finalScore,
-      correct: correctCount,
-      total: shuffledEquipment.length,
-    });
+    setQuizResult({ score: finalScore, correct: correctCount, total: EQUIPMENT_LIST.length });
   };
 
   const handleReset = () => {
     setDroppedLabels({});
+    setSelectedLabelId(null);
     setIsSubmitted(false);
     setQuizResult(null);
   };
 
-  const isLabelDropped = (labelId: string) =>
-    Object.values(droppedLabels).includes(labelId);
-
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">
-        Latihan Mengenal Alat Laboratorium
-      </h2>
-      <p className="text-gray-600 text-sm">
-        Geser nama alat dari bawah dan taruh di bagian bawah gambar alat yang sesuai.
-      </p>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* <Text style={styles.h2}>Latihan Mengenal Alat Laboratorium</Text>
+      <Text style={styles.p}>Cara main: Pilih nama alat di bawah, lalu tap kotak gambar yang sesuai.</Text> */}
 
-      {/* Area Kotak Alat */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
-        {shuffledEquipment.map((equipment) => (
-          <EquipmentBox
-            key={equipment.id}
-            equipment={equipment}
-            droppedLabelId={droppedLabels[equipment.id]}
-            correctLabelId={`label_${equipment.id}`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            isSubmitted={isSubmitted}
-          />
-        ))}
-      </div>
+      {/* Grid Alat */}
+      <View style={styles.grid}>
+        {shuffledEquipment.map((item) => {
+          const droppedLabelId = droppedLabels[item.id];
+          const droppedLabelName = allLabels.find(l => l.id === droppedLabelId)?.name;
+          const isCorrect = isSubmitted ? droppedLabelId === item.id : null;
 
-      {/* Area Label Draggable */}
-      <div className="p-4 bg-gray-50 rounded-lg shadow-inner mt-6">
-        <h3 className="font-medium text-gray-700 mb-3 text-center">
-          Nama Alat (Drag dari sini):
-        </h3>
-        <div className="flex flex-wrap justify-center gap-3">
-          {shuffledLabels.map((label) => (
-            <DraggableLabel
-              key={label.id}
-              label={label}
-              onDragStart={handleDragStart}
-              isDropped={isLabelDropped(label.id)}
-            />
-          ))}
-        </div>
-      </div>
+          return (
+            <TouchableOpacity 
+              key={item.id} 
+              activeOpacity={0.7}
+              onPress={() => handlePlaceLabel(item.id)}
+              style={[
+                styles.card,
+                isCorrect === true && styles.cardCorrect,
+                isCorrect === false && styles.cardIncorrect
+              ]}
+            >
+              <View style={styles.imageBox}>
+                <Image source={item.image} style={styles.imageAlat} resizeMode="contain" />
+              </View>
+              <View style={styles.labelDropZone}>
+                {droppedLabelName ? (
+                  <Text style={[styles.droppedText, isSubmitted && (isCorrect ? styles.textCorrect : styles.textIncorrect)]}>
+                    {droppedLabelName}
+                  </Text>
+                ) : (
+                  <Text style={styles.hintText}>Tap di sini</Text>
+                )}
+                {isSubmitted && (
+                  <View style={styles.iconPos}>
+                    {isCorrect ? <Check size={14} color="green" /> : <X size={14} color="red" />}
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-      {/* Hasil + Tombol */}
-      <div className="border-t mt-6 pt-4 space-y-4">
-        {quizResult && (
-          <div
-            className={`p-4 rounded-xl ${
-              quizResult.score === 100
-                ? "bg-green-50 border-green-400"
-                : "bg-blue-50 border-blue-400"
-            } border-2`}
-          >
-            <p className="text-lg font-bold mb-1">Hasil Tebak Alat:</p>
-            <div className="flex items-baseline justify-between">
-              <p className="text-2xl font-extrabold text-blue-700">
-                Skor: {quizResult.score} / 100
-              </p>
-              <p className="text-sm text-gray-600">
-                ({quizResult.correct} / {quizResult.total} benar)
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Area Pilihan Label */}
+      <View style={styles.labelBank}>
+        <Text style={styles.bankTitle}>Pilih Nama Alat:</Text>
+        <View style={styles.bankGrid}>
+          {allLabels.map((label) => {
+            const isUsed = Object.values(droppedLabels).includes(label.id);
+            const isSelected = selectedLabelId === label.id;
+            return (
+              <TouchableOpacity
+                key={label.id}
+                disabled={isSubmitted || isUsed}
+                onPress={() => setSelectedLabelId(label.id)}
+                style={[
+                  styles.labelBtn,
+                  isSelected && styles.labelBtnActive,
+                  isUsed && styles.labelBtnUsed
+                ]}
+              >
+                <Text style={[styles.labelText, isSelected && styles.labelTextActive, isUsed && styles.labelTextUsed]}>
+                  {label.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
 
-        <div className="flex space-x-4">
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitted || Object.keys(droppedLabels).length !== shuffledEquipment.length}
-            className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm"
-          >
-            Cek Jawaban
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition-colors flex items-center gap-1 text-sm"
-          >
-            <RefreshCcw className="w-4 h-4" /> Ulangi
-          </button>
-        </div>
-      </div>
-    </div>
+      {/* Hasil & Tombol */}
+      {quizResult && (
+        <View style={[styles.resultBox, quizResult.score === 100 ? styles.resGreen : styles.resBlue]}>
+          <Text style={styles.resTitle}>Hasil Tebak Alat:</Text>
+          <Text style={styles.resScore}>{quizResult.score} / 100</Text>
+          <Text style={styles.resMeta}>({quizResult.correct} benar dari {quizResult.total})</Text>
+        </View>
+      )}
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity 
+          style={[styles.btnPrimary, (isSubmitted || Object.keys(droppedLabels).length < 6) && styles.btnDisabled]} 
+          onPress={handleSubmit}
+          disabled={isSubmitted || Object.keys(droppedLabels).length < 6}
+        >
+          <Text style={styles.btnPrimaryText}>{isSubmitted ? "Jawaban Terkunci" : "Cek Jawaban"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btnSecondary} onPress={handleReset}>
+          <RefreshCcw size={16} color="#374151" />
+          <Text style={styles.btnSecondaryText}>Ulangi</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16, paddingBottom: 50 },
+  h2: { fontSize: 20, fontWeight: "800", color: "#111827", marginBottom: 8 },
+  p: { fontSize: 13, color: "#6B7280", marginBottom: 20 },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  card: { width: "48%", backgroundColor: "#fff", borderRadius: 15, borderWidth: 1.5, borderColor: "#DBEAFE", marginBottom: 15, overflow: "hidden", elevation: 2 },
+  cardCorrect: { borderColor: "#86efac", backgroundColor: "#f0fdf4" },
+  cardIncorrect: { borderColor: "#fca5a5", backgroundColor: "#fef2f2" },
+  imageBox: { height: 100, backgroundColor: "#f8fafc", justifyContent: "center", alignItems: "center", padding: 10 },
+  imageAlat: { width: "100%", height: "100%" },
+  labelDropZone: { height: 45, justifyContent: "center", alignItems: "center", borderTopWidth: 1, borderTopColor: "#E2E8F0", paddingHorizontal: 5 },
+  droppedText: { fontSize: 12, fontWeight: "700", color: "#1E40AF", textAlign: "center" },
+  textCorrect: { color: "#166534" },
+  textIncorrect: { color: "#991b1b" },
+  hintText: { fontSize: 11, color: "#94a3b8", fontStyle: "italic" },
+  iconPos: { position: "absolute", top: 2, right: 4 },
+  labelBank: { marginTop: 10, padding: 15, backgroundColor: "#F1F5F9", borderRadius: 15 },
+  bankTitle: { fontSize: 14, fontWeight: "700", color: "#475569", marginBottom: 10, textAlign: "center" },
+  bankGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
+  labelBtn: { paddingVertical: 8, paddingHorizontal: 12, backgroundColor: "#fff", borderRadius: 10, borderWidth: 1, borderColor: "#CBD5E1" },
+  labelBtnActive: { backgroundColor: "#3B82F6", borderColor: "#2563EB" },
+  labelBtnUsed: { backgroundColor: "#E2E8F0", opacity: 0.5 },
+  labelText: { fontSize: 12, fontWeight: "600", color: "#334155" },
+  labelTextActive: { color: "#fff" },
+  labelTextUsed: { textDecorationLine: "line-through" },
+  resultBox: { padding: 16, borderRadius: 15, borderWidth: 2, marginTop: 20 },
+  resBlue: { backgroundColor: "#EFF6FF", borderColor: "#93C5FD" },
+  resGreen: { backgroundColor: "#ECFDF5", borderColor: "#86EFAC" },
+  resTitle: { fontWeight: "800", fontSize: 16, color: "#111827" },
+  resScore: { fontSize: 24, fontWeight: "900", color: "#2563EB", marginTop: 4 },
+  resMeta: { fontSize: 12, color: "#64748B" },
+  actionRow: { flexDirection: "row", gap: 10, marginTop: 20 },
+  btnPrimary: { flex: 1, backgroundColor: "#2563EB", padding: 15, borderRadius: 12, alignItems: "center" },
+  btnPrimaryText: { color: "#fff", fontWeight: "800" },
+  btnDisabled: { backgroundColor: "#94A3B8" },
+  btnSecondary: { flexDirection: "row", gap: 6, backgroundColor: "#E2E8F0", paddingHorizontal: 15, borderRadius: 12, alignItems: "center" },
+  btnSecondaryText: { fontWeight: "700", color: "#334155" },
+});

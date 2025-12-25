@@ -139,10 +139,10 @@ export default function LatihanBab2() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.h2}>Latihan Klasifikasi Teori Asam Basa</Text>
+      {/* <Text style={styles.h2}>Latihan Klasifikasi Teori Asam Basa</Text>
       <Text style={styles.p}>
         Tugasmu: pilih reaksi → lalu tap kotak teori untuk menempatkannya. (Mobile-friendly version)
-      </Text>
+      </Text> */}
 
       {/* ZONES */}
       <View style={styles.zonesGrid}>
@@ -178,7 +178,7 @@ export default function LatihanBab2() {
                           onPress={() => removeFromZone(item.id, zone.id)}
                           style={styles.removeBtn}
                         >
-                          <Text style={styles.removeText}>hapus</Text>
+                          <Text style={styles.removeText}>Hapus</Text>
                         </Pressable>
                       )}
                     </View>
@@ -204,7 +204,7 @@ export default function LatihanBab2() {
                 style={[styles.card, selected && styles.cardSelected]}
               >
                 <Text style={styles.code}>{r.eq}</Text>
-                {selected && <Text style={styles.selectedTag}>dipilih</Text>}
+                {selected && <Text style={styles.selectedTag}>Dipilih</Text>}
               </Pressable>
             );
           })}
