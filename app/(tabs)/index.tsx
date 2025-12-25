@@ -1,70 +1,233 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { onAuthStateChanged } from 'firebase/auth';
+import React from 'react';
+import {
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { auth } from '../../firebaseConfig'; // Pastikan path benar
 
-export default function HomeScreen() {
+// Import Assets
+import materiImage from '../../assets/images/course.jpg';
+import interaktifGif from '../../assets/images/interaktif.gif';
+import labImage from '../../assets/images/lab.jpg';
+import latihanGif from '../../assets/images/latihan.gif';
+import pembelajaranGif from '../../assets/images/pembelajaran.webp';
+import kuisImage from '../../assets/images/quiz.jpg';
+import visualGif from '../../assets/images/visualisasi.gif';
+
+function FeatureCard({ imageSrc, title, description, onPress }: any) {
   return (
-    <View style={styles.container}>
-      {/* Kartu Selamat Datang */}
-      <View style={styles.card}>
-        <Text style={styles.title}>Acid-Base VLab</Text>
-        <Text style={styles.subtitle}>
-          Belajar kimia jadi lebih simpel dan asikkk.
-        </Text>
-        
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => alert('Mulai Petualangan!')}
-        >
-          <Text style={styles.buttonText}>Mulai Sekarang</Text>
-        </TouchableOpacity>
+    <TouchableOpacity style={styles.featureCard} onPress={onPress}>
+      <Image source={imageSrc} style={styles.featureImage} resizeMode="cover" />
+      <View style={styles.featureContent}>
+        <Text style={styles.featureTitle}>{title}</Text>
+        <Text style={styles.featureDesc}>{description}</Text>
       </View>
+    </TouchableOpacity>
+  );
+}
+
+// Komponen Card buat yang bisa digeser (Horizontal)
+function KeyFeatureCard({ imageSrc, title, description }: any) {
+  return (
+    <View style={styles.keyCard}>
+      <Image source={imageSrc} style={styles.keyImage} resizeMode="contain" />
+      <Text style={styles.keyTitle}>{title}</Text>
+      <Text style={styles.keyDesc}>{description}</Text>
     </View>
   );
 }
 
+export default function HomePage() { 
+  const [user, setUser] = React.useState<any>(null);
+  const router = useRouter();
+
+  // Efek buat mantau login user secara real-time
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser); // Kalau ada user, dia ngisi data. Kalau logout, jadi null.
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // STATUS LOGIN (Ganti ke 'true' buat liat foto profil, 'false' buat tombol login)
+  const isLoggedIn = !!user;
+  const userPhoto = user?.photoURL || "https://via.placeholder.com/40";
+  
+  const handleProtectedNavigation = (targetRoute: string) => {
+    if (isLoggedIn) {
+      router.push(targetRoute as any);
+    } else {
+      router.push('/Login' as any);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      {/* --- CUSTOM HEADER --- */}
+      <View style={styles.customHeader}>
+        <Text style={styles.brandText}>AcidBaseVLab</Text>
+        
+        {isLoggedIn ? (
+          <TouchableOpacity onPress={() => Alert.alert("Profil", "Ini halaman profil Ken!")}>
+            <Image source={{ uri: userPhoto }} style={styles.profileImage} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.loginButtonSmall} 
+            onPress={() => router.push('/Login' as any)}
+          >
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>Selamat Datang!</Text>
+          <Text style={styles.heroSubtitle}>Ayo belajar kimia dengan menyenangkan!</Text>
+          <TouchableOpacity 
+            style={styles.heroButton} 
+            onPress={() => handleProtectedNavigation('/Course')}
+          >
+            <Text style={styles.heroButtonText}>Mulai Sekarang</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Petualangan Belajar */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Mulai Petualangan Belajarmu</Text>
+          <View style={styles.grid}>
+            <FeatureCard
+              imageSrc={materiImage}
+              title="Materi Pembelajaran"
+              description="Pelajari konsep dasar asam-basa secara mendalam."
+              onPress={() => handleProtectedNavigation('/Course')}
+            />
+            <FeatureCard
+              imageSrc={labImage}
+              title="Virtual Lab"
+              description="Eksperimen titrasi di laboratorium virtual interaktif."
+              onPress={() => handleProtectedNavigation('/VirtualLab')}
+            />
+            <FeatureCard
+              imageSrc={kuisImage}
+              title="Kuis & Latihan"
+              description="Uji pemahamanmu melalui berbagai kuis menantang."
+              onPress={() => handleProtectedNavigation('/Quiz')}
+            /> 
+          </View>
+        </View>
+
+        {/* --- FITUR UNGGULAN (YANG BISA DIGESER) --- */}
+        <View style={styles.section}>
+          <Text style={styles.sectionHeader}>Fitur Unggulan Kami</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            <KeyFeatureCard
+              imageSrc={visualGif}
+              title="Visualisasi Menarik"
+              description="Belajar materi asam basa dengan tampilan website yang menarik."
+            />
+            <KeyFeatureCard
+              imageSrc={interaktifGif}
+              title="Interaktif"
+              description="Belajar sambil praktik! Uji pemahamanmu dengan latihan yang interaktif."
+            />
+            <KeyFeatureCard
+              imageSrc={pembelajaranGif}
+              title="Video Pembelajaran"
+              description="Video penjelasan singkat untuk membantumu memahami konsep."
+            />
+            <KeyFeatureCard
+              imageSrc={latihanGif}
+              title="Latihan Menyenangkan"
+              description="Latihan dan kuis yang akan menguji pemahamanmu."
+            />
+          </ScrollView>
+        </View>
+        
+        <View style={{height: 40}} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF9C4', // Kuning pastel lembut
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 
   },
-  card: {
-    backgroundColor: 'white',
-    padding: 30,
-    borderRadius: 25,
-    width: '100%',
-    maxWidth: 400,
+  customHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    // Efek bayangan biar kelihatan modern (UI/UX Design)
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#3b82f6',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#3b82f6',
+  },
+  loginButtonSmall: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  heroSection: {
+    backgroundColor: '#3b82f6', 
+    padding: 25,
+    margin: 15,
+    borderRadius: 20,
     elevation: 5,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FBC02D', // Kuning agak tua buat teks
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#757575',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-  button: {
-    backgroundColor: '#FBC02D',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 15,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  heroTitle: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 5 },
+  heroSubtitle: { fontSize: 14, color: '#dbeafe', marginBottom: 15 },
+  heroButton: { backgroundColor: 'white', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10, alignSelf: 'flex-start' },
+  heroButtonText: { color: '#2563eb', fontWeight: 'bold' },
+  section: { padding: 15 },
+  sectionHeader: { fontSize: 20, fontWeight: 'bold', color: '#1f2937', marginBottom: 15 },
+  grid: { gap: 15 },
+  featureCard: { backgroundColor: 'white', borderRadius: 15, overflow: 'hidden', elevation: 3, marginBottom: 15 },
+  featureImage: { width: '100%', height: 160 },
+  featureContent: { padding: 15 },
+  featureTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
+  featureDesc: { fontSize: 13, color: '#4b5563', marginTop: 5 },
+  
+  // Styles buat Horizontal Scroll
+  horizontalScroll: { flexDirection: 'row' },
+  keyCard: { backgroundColor: 'white', padding: 15, borderRadius: 15, width: 220, marginRight: 15, elevation: 2, alignItems: 'center' },
+  keyImage: { width: 120, height: 120, marginBottom: 10 },
+  keyTitle: { fontSize: 16, fontWeight: 'bold', color: '#1f2937', marginBottom: 5 },
+  keyDesc: { fontSize: 12, color: '#4b5563', textAlign: 'center' }
 });

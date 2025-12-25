@@ -1,10 +1,12 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import { AuthProvider } from '../context/AuthContext'; // Sesuaikan path-nya ya Ken!
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+
 
 
 export {
@@ -41,14 +43,41 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    // INI KUNCINYA! Bungkus semua dengan AuthProvider
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
 
   return (
       <Stack>
+        {/* 1. Folder Utama (Tabs) */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        
+        {/* 2. Halaman Login (Biar ada tombol Back tulisan 'Back') */}
+        <Stack.Screen 
+          name="Login" 
+          options={{ 
+            headerTitle: 'Masuk Akun',
+            headerBackTitle: 'Back', // Ini kuncinya biar gak tulisan (tabs)
+            headerShown: true 
+          }} 
+        />
+
+        {/* 3. Halaman Register */}
+        <Stack.Screen 
+          name="Register" 
+          options={{ 
+            headerTitle: 'Daftar Baru',
+            headerBackTitle: 'Back',
+            headerShown: true 
+          }} 
+        />
+
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
   );

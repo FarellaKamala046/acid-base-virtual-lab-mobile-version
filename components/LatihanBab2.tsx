@@ -110,7 +110,7 @@ export default function LatihanBab2() {
         const userRef = doc(db, "user_scores", currentUser.uid);
         await setDoc(
           userRef,
-          { Bab2Score: Math.max(finalScore, userScores?.Bab2Score ?? 0) },
+          { Bab2Score: finalScore},
           { merge: true }
         );
         if (typeof refreshUserScores === "function") {

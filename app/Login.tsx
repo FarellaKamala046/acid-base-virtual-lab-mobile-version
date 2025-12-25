@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebaseConfig'; // Pastikan path ini benar ya Ken!
+import { auth } from '../firebaseConfig'; // Pastikan path ini benar ya Ken!
 
 // Import Asset Gambar
-import LoginImage from '../../assets/images/login-regis-gambar2.jpg';
+import LoginImage from '../assets/images/login-regis-gambar2.jpg';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

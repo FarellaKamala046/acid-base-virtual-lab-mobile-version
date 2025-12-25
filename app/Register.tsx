@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { auth } from '../firebaseConfig';
 
 // Import Asset Gambar
-import LoginImage from '../../assets/images/login-regis-gambar2.jpg';
+import LoginImage from '../assets/images/login-regis-gambar2.jpg';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');

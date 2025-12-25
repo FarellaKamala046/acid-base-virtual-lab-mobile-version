@@ -1,479 +1,590 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from "react-native";
-import { RefreshCcw, CheckCircle, XCircle } from "lucide-react-native";
-import { Picker } from "@react-native-picker/picker";
-
-// TODO: sesuaikan ini sama project kamu
-import { useAuth } from "../context/AuthContext";
+import React, { useCallback, useRef, useState } from "react";
+import { View, Text, StyleSheet, Dimensions, Alert, Pressable } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from "react-native-reanimated";
+// import { Picker } from "@react-native-picker/picker";
+import type { View as RNView } from "react-native";
+import { useAuth } from "../context/AuthContext"; // Sesuaikan path-nya ya Ken!
 import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
+import { RefreshCcw } from "lucide-react-native";
 
-type SolutionType = "acid" | "base" | "neutral";
-type LakmusColor = "merah" | "biru";
-type Conclusion = "" | "Asam" | "Basa" | "Netral";
+const { width } = Dimensions.get("window");
+const BEAKER_SIZE = Math.min(90, width / 3.9);
 
-type Solution = {
-  id: "glass1" | "glass2" | "glass3";
-  name: string;
-  type: SolutionType;
-  drops: LakmusColor[];
-};
+type BeakerKey = "A" | "B" | "C";
+type LitmusColor = "Merah" | "Biru";
 
-type QuizResult =
-  | null
-  | {
-      score: number;
-      correct: number;
-      total: number;
-      isPerfect: boolean;
-    }
-  | { error: string };
+type Rect = { x: number; y: number; w: number; h: number };
 
-const INITIAL_SOLUTIONS: Solution[] = [
-  { id: "glass1", name: "Larutan A", type: "acid", drops: [] },
-  { id: "glass2", name: "Larutan B", type: "base", drops: [] },
-  { id: "glass3", name: "Larutan C", type: "neutral", drops: [] },
-];
+function inside(r: Rect | null, x: number, y: number) {
+  if (!r) return false;
+  return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+}
 
-const getResultLabel = (originalColor: LakmusColor, solutionType: SolutionType) => {
-  // aturan yang kamu pakai di web:
-  // - Lakmus merah -> jadi biru kalau basa; tetap merah kalau asam/netral
-  // - Lakmus biru -> jadi merah kalau asam; tetap biru kalau basa/netral
-  if (originalColor === "merah") {
-    return solutionType === "base" ? "M→B" : "M→M";
-  }
-  return solutionType === "acid" ? "B→M" : "B→B";
-};
+function labelFor(target: BeakerKey, color: LitmusColor) {
+  // A = asam: merah tetap merah, biru jadi merah
+  // B = basa: merah jadi biru, biru tetap biru
+  // C = netral: merah tetap merah, biru tetap biru
+  if (target === "A") return color === "Merah" ? "M→M" : "B→M";
+  if (target === "B") return color === "Merah" ? "M→B" : "B→B";
+  return color === "Merah" ? "M→M" : "B→B";
+}
 
-const getResultStyle = (originalColor: LakmusColor, solutionType: SolutionType) => {
-  // warna label hasil (biar mirip web)
-  if (originalColor === "merah") {
-    return solutionType === "base" ? styles.dropBlue : styles.dropRed;
-  }
-  return solutionType === "acid" ? styles.dropRed : styles.dropBlue;
-};
+function miniBg(lbl: string) {
+  return lbl.endsWith("M") ? "#ef4444" : "#3b82f6";
+}
 
-export default function LatihanBab1() {
-  const { currentUser, userScores, refreshUserScores } = useAuth();
+function DraggableLakmus({
+  color,
+  onDrop,
+}: {
+  color: LitmusColor;
+  onDrop: (absX: number, absY: number, color: LitmusColor) => void;
+}) {
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const z = useSharedValue(1);
 
-  const [solutions, setSolutions] = useState<Solution[]>(INITIAL_SOLUTIONS);
-  const [selectedLakmus, setSelectedLakmus] = useState<LakmusColor | null>(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const gesture = Gesture.Pan()
+    .onBegin(() => {
+      z.value = 999;
+    })
+    .onUpdate((e) => {
+      tx.value = e.translationX;
+      ty.value = e.translationY;
+    })
+    .onEnd((e) => {
+      runOnJS(onDrop)(e.absoluteX, e.absoluteY, color);
 
-  const [conclusions, setConclusions] = useState<Record<Solution["id"], Conclusion>>({
-    glass1: "",
-    glass2: "",
-    glass3: "",
-  });
-
-  const [quizResult, setQuizResult] = useState<QuizResult>(null);
-
-  const correctAnswers = useMemo<Record<Solution["id"], Exclude<Conclusion, "">>>(
-    () => ({
-      glass1: "Asam",
-      glass2: "Basa",
-      glass3: "Netral",
-    }),
-    []
-  );
-
-  const addDropToSolution = (targetId: Solution["id"]) => {
-    if (!selectedLakmus) {
-      Alert.alert("Pilih lakmus dulu", "Tap lakmus merah/biru dulu sebelum memilih gelas.");
-      return;
-    }
-
-    setSolutions((prev) =>
-      prev.map((sol) =>
-        sol.id === targetId ? { ...sol, drops: [...sol.drops, selectedLakmus] } : sol
-      )
-    );
-  };
-
-  const handleConclusionChange = (id: Solution["id"], value: Conclusion) => {
-    setConclusions((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubmit = async () => {
-    const allAnswered = Object.values(conclusions).every((val) => val !== "");
-    if (!allAnswered) {
-      setQuizResult({ error: "Harap isi semua kesimpulan sebelum cek jawaban!" });
-      return;
-    }
-
-    let correctCount = 0;
-    (Object.keys(conclusions) as Solution["id"][]).forEach((id) => {
-      if (conclusions[id] === correctAnswers[id]) correctCount++;
+      // balik halus TANPA bounce
+      tx.value = withTiming(0, { duration: 160 });
+      ty.value = withTiming(0, { duration: 160 });
+      z.value = 1;
     });
 
-    const finalScore = Math.round((correctCount / solutions.length) * 100);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }, { translateY: ty.value }],
+    zIndex: z.value,
+  }));
 
-    if (currentUser) {
+  return (
+    <GestureDetector gesture={gesture}>
+      <Animated.View style={[styles.lakmus, color === "Merah" ? styles.red : styles.blue, style]}>
+        <Text style={styles.lakmusText}>{color.toUpperCase()}</Text>
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+function KesimpulanDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const options = ["Asam", "Basa", "Netral"];
+
+  return (
+    <View style={{ width: "100%" }}>
+      {/* Trigger */}
+      <Pressable
+        style={styles.dropdownTrigger}
+        onPress={() => setOpen((p) => !p)}
+      >
+        <Text style={[styles.dropdownText, !value && styles.placeholder]}>
+          {value || "Pilih Kesimpulan"}
+        </Text>
+        <Text style={styles.arrow}>▼</Text>
+      </Pressable>
+
+      {/* Options */}
+      {open && (
+        <View style={styles.dropdownMenu}>
+          {options.map((opt) => (
+            <Pressable
+              key={opt}
+              style={styles.dropdownItem}
+              onPress={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
+            >
+              <Text style={styles.dropdownItemText}>{opt}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+
+export default function LatihanBab1() {
+  const { currentUser, userScores, refreshUserScores } = useAuth() as any;
+  const [conclusions, setConclusions] = useState<Record<BeakerKey, string>>({ A: "", B: "", C: "" });
+  const [testResults, setTestResults] = useState<Record<BeakerKey, string[]>>({ A: [], B: [], C: [] });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState<any>(null);
+
+  // refs untuk measureInWindow (ini kunci biar drop-nya akurat)
+  const refA = useRef<RNView | null>(null);
+  const refB = useRef<RNView | null>(null);
+  const refC = useRef<RNView | null>(null);
+
+  const [selectedLakmus, setSelectedLakmus] = useState<"Merah" | "Biru">("Merah");
+
+  const handleReset = () => {
+    setTestResults({ A: [], B: [], C: [] });
+    setConclusions({ A: "", B: "", C: "" });
+    setIsSubmitted(false);
+    setQuizResult(null);
+  };
+
+  const rectRef = useRef<Record<BeakerKey, Rect | null>>({ A: null, B: null, C: null });
+
+  const measureBeakers = useCallback(() => {
+    // ✅ helper menerima nullable
+    const measureOne = (key: BeakerKey, r: React.RefObject<RNView | null>) => {
+      r.current?.measureInWindow((x, y, w, h) => {
+        rectRef.current[key] = { x, y, w, h };
+      });
+    };
+
+    measureOne("A", refA);
+    measureOne("B", refB);
+    measureOne("C", refC);
+  }, []);
+
+  const handleSubmit = async () => {
+    const kunci = { A: "Asam", B: "Basa", C: "Netral" };
+    let benar = 0;
+
+    // Hitung skor berdasarkan dropdown yang dipilih Ken
+    if (conclusions.A === kunci.A) benar++;
+    if (conclusions.B === kunci.B) benar++;
+    if (conclusions.C === kunci.C) benar++;
+
+    const finalScore = Math.round((benar / 3) * 100);
+
+    // LOGIKA SIMPAN KE FIREBASE (Mirip Bab 2) ✨
+    if (currentUser?.uid) {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);
-        const getScore = (scores: Record<string, unknown> | undefined, key: string): number => {
-  const v = scores?.[key];
-  return typeof v === "number" && Number.isFinite(v) ? v : 0;
-};
         await setDoc(
           userRef,
-          {
-          Bab1Score: Math.max(finalScore, getScore(userScores, "Bab1Score")),
-          },
+          { Bab1Score: finalScore},
           { merge: true }
         );
-
-        await refreshUserScores?.();
+        if (typeof refreshUserScores === "function") {
+          await refreshUserScores();
+        }
       } catch (error) {
-        console.error("Gagal menyimpan skor:", error);
+        console.error("Gagal menyimpan skor Bab 1:", error);
       }
     }
 
-    setIsSubmitted(true);
+    // Set status untuk munculin kotak hasil
     setQuizResult({
       score: finalScore,
-      correct: correctCount,
-      total: solutions.length,
-      isPerfect: correctCount === solutions.length,
+      correctAssociations: benar,
+      maxAssociations: 3,
     });
+    setIsSubmitted(true);
   };
 
-  const handleReset = () => {
-    setSolutions(INITIAL_SOLUTIONS);
-    setConclusions({ glass1: "", glass2: "", glass3: "" });
-    setIsSubmitted(false);
-    setQuizResult(null);
-    setSelectedLakmus(null);
-  };
+  const onDrop = useCallback(
+    (absX: number, absY: number, color: LitmusColor) => {
+      // pastikan rect terbaru
+      measureBeakers();
+
+      const r = rectRef.current;
+      let target: BeakerKey | null = null;
+
+      if (inside(r.A, absX, absY)) target = "A";
+      else if (inside(r.B, absX, absY)) target = "B";
+      else if (inside(r.C, absX, absY)) target = "C";
+
+      if (!target) return;
+
+      const lbl = labelFor(target, color);
+      setTestResults((prev) => ({
+        ...prev,
+        [target!]: [...prev[target!], lbl].slice(-2),
+      }));
+    },
+    [measureBeakers]
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.h2}>Latihan Uji Indikator Lakmus</Text>
-      <Text style={styles.p}>
-        Tugasmu: pilih lakmus merah/biru, lalu tap Larutan A/B/C. Amati perubahannya, lalu tentukan sifat larutan
-        (Asam/Basa/Netral).
-      </Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container} onLayout={measureBeakers}>
+      
+        {/* BAR LAKMUS (di atas beaker) */}
+        <View style={styles.lakmusBar}>
+          <Text style={styles.lakmusBarLabel}>Lakmus:</Text>
+          
+          <View style={styles.pillContainer}>
+             <DraggableLakmus color="Merah" onDrop={onDrop} />
+             <DraggableLakmus color="Biru" onDrop={onDrop} />
+          </View>
+        </View>
 
-      {/* Lakmus picker */}
-      <View style={styles.lakmusWrap}>
-        <Text style={styles.lakmusLabel}>Lakmus:</Text>
 
-        <Pressable
-          style={[
-            styles.lakmusChip,
-            styles.lakmusRed,
-            selectedLakmus === "merah" && styles.lakmusSelected,
-          ]}
-          onPress={() => setSelectedLakmus("merah")}
-        >
-          <Text style={styles.lakmusChipText}>Merah</Text>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.lakmusChip,
-            styles.lakmusBlue,
-            selectedLakmus === "biru" && styles.lakmusSelected,
-          ]}
-          onPress={() => setSelectedLakmus("biru")}
-        >
-          <Text style={styles.lakmusChipText}>Biru</Text>
-        </Pressable>
-      </View>
-
-      {/* Beakers */}
-      <View style={styles.grid}>
-        {solutions.map((solution) => (
-          <View key={solution.id} style={styles.cardWrap}>
-            <Pressable
-              onPress={() => addDropToSolution(solution.id)}
-              style={[styles.beaker, isSubmitted && styles.beakerDisabled]}
-              disabled={isSubmitted}
-            >
-              <Text style={styles.beakerTitle}>{solution.name}</Text>
-
-              <View style={styles.dropList}>
-                {solution.drops.map((drop, idx) => (
-                  <View
-                    key={`${solution.id}-${idx}`}
-                    style={[styles.drop, getResultStyle(drop, solution.type)]}
-                  >
-                    <Text style={styles.dropText}>{getResultLabel(drop, solution.type)}</Text>
+        <View style={styles.beakerRow}>
+          {/* A */}
+          <View style={styles.beakerWrapper}>
+            <View ref={refA} style={styles.beaker}>
+              <Text style={styles.beakerLabel}>A</Text>
+              <View style={styles.resultContainer}>
+                {testResults.A.map((res, i) => (
+                  <View key={`A-${i}`} style={[styles.miniLakmus, { backgroundColor: miniBg(res) }]}>
+                    <Text style={styles.miniText}>{res}</Text>
                   </View>
                 ))}
               </View>
+            </View>
 
-              <Text style={styles.beakerHint}>
-                {isSubmitted ? "Terkunci" : "Tap di sini"}
+            <View style={styles.pickerWrap}>
+
+              <KesimpulanDropdown
+                value={conclusions.A}
+                onChange={(val) =>
+                  setConclusions((p) => ({ ...p, A: val }))
+                }
+              />
+            </View>
+
+            {/* <Text style={styles.subText}>Larutan A</Text> */}
+          </View>
+
+          {/* B */}
+          <View style={styles.beakerWrapper}>
+            <View ref={refB} style={styles.beaker}>
+              <Text style={styles.beakerLabel}>B</Text>
+              <View style={styles.resultContainer}>
+                {testResults.B.map((res, i) => (
+                  <View key={`B-${i}`} style={[styles.miniLakmus, { backgroundColor: miniBg(res) }]}>
+                    <Text style={styles.miniText}>{res}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={styles.pickerWrap}>
+              {/* <Text style={styles.pickerTitle}>Kesimpulan</Text> */}
+
+              <KesimpulanDropdown
+                value={conclusions.B}
+                onChange={(val) =>
+                  setConclusions((p) => ({ ...p, B: val }))
+                }
+              />
+            </View>
+
+            {/* <Text style={styles.subText}>Larutan B</Text> */}
+          </View>
+
+          {/* C */}
+          <View style={styles.beakerWrapper}>
+            <View ref={refC} style={styles.beaker}>
+              <Text style={styles.beakerLabel}>C</Text>
+              <View style={styles.resultContainer}>
+                {testResults.C.map((res, i) => (
+                  <View key={`C-${i}`} style={[styles.miniLakmus, { backgroundColor: miniBg(res) }]}>
+                    <Text style={styles.miniText}>{res}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.pickerWrap}>
+              {/* <Text style={styles.pickerTitle}>Kesimpulan</Text> */}
+
+              <KesimpulanDropdown
+                value={conclusions.C}
+                onChange={(val) =>
+                  setConclusions((p) => ({ ...p, C: val }))
+                }
+              />
+            </View>
+
+            {/* <Text style={styles.subText}>Larutan C</Text> */}
+          </View>
+        </View>
+
+        {/* <View style={styles.dragZone}>
+          <Text style={styles.hint}>Tarik kertas lakmus ke arah gelas:</Text>
+          <View style={styles.lakmusGroup}>
+            <DraggableLakmus color="Biru" onDrop={onDrop} />
+            <DraggableLakmus color="Merah" onDrop={onDrop} />
+          </View>
+        </View> */}
+
+        {/* <Pressable
+          style={styles.btnCek}
+          onPress={() => Alert.alert("Tersimpan!", "Jawaban kamu sudah dicatat Ken!")}
+        >
+          <Text style={styles.btnText}>Simpan Hasil</Text>
+        </Pressable> */}
+
+        {/* BUTTON ROW */}
+        {/* <View style={styles.actionRow}>
+          <Pressable
+            style={styles.btnPrimary}
+            onPress={() => Alert.alert("Cek Kesimpulan", "Nanti di sini kamu bisa validasi jawaban 😊")}
+          >
+            <Text style={styles.btnPrimaryText}>Cek Kesimpulan</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.btnSecondary}
+            onPress={() => {
+              setTestResults({ A: [], B: [], C: [] });
+              setConclusions({ A: "", B: "", C: "" });
+            }}
+          >
+            <Text style={styles.btnSecondaryText}>Ulangi Simulasi</Text>
+          </Pressable>
+        </View> */}
+
+        {/* RESULT BLOCK ✨ */}
+        <View style={styles.resultBlock}>
+          {quizResult && (
+            <View style={[styles.resultBox, quizResult.score === 100 ? styles.resultGreen : styles.resultBlue]}>
+              <Text style={styles.resultTitle}>
+                {quizResult.score === 100 ? "SELAMAT! SKOR SEMPURNA!" : "Hasil Latihanmu"}
+              </Text>
+              <View style={styles.resultRow}>
+                <Text style={styles.resultScore}>{quizResult.score} / 100</Text>
+                <Text style={styles.resultMeta}>
+                  ({quizResult.correctAssociations} / {quizResult.maxAssociations})
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.actions}>
+            <Pressable
+              onPress={handleSubmit}
+              disabled={isSubmitted}
+              style={[styles.primaryBtn, isSubmitted && styles.btnDisabled]}
+            >
+              <Text style={styles.primaryBtnText}>
+                {isSubmitted ? "Jawaban Terkunci" : "Cek Kesimpulan"}
               </Text>
             </Pressable>
 
-            {/* Dropdown */}
-            <View style={[styles.pickerWrap, isSubmitted && styles.pickerDisabled]}>
-              <Picker
-                enabled={!isSubmitted}
-                selectedValue={conclusions[solution.id]}
-                onValueChange={(v: Conclusion) => handleConclusionChange(solution.id, v)}
-              >
-                <Picker.Item label="-- Pilih Kesimpulan --" value="" />
-                <Picker.Item label="Asam" value="Asam" />
-                <Picker.Item label="Basa" value="Basa" />
-                <Picker.Item label="Netral" value="Netral" />
-              </Picker>
-            </View>
-
-            {/* Status */}
-            {isSubmitted && (
-              <View style={styles.statusRow}>
-                {conclusions[solution.id] === correctAnswers[solution.id] ? (
-                  <>
-                    <CheckCircle size={16} color="#16A34A" />
-                    <Text style={[styles.statusText, styles.correct]}>BENAR</Text>
-                  </>
-                ) : (
-                  <>
-                    <XCircle size={16} color="#DC2626" />
-                    <Text style={[styles.statusText, styles.wrong]}>SALAH</Text>
-                  </>
-                )}
-              </View>
-            )}
+            <Pressable onPress={handleReset} style={styles.secondaryBtn}>
+              <RefreshCcw size={16} color="#374151" />
+              <Text style={styles.secondaryBtnText}>Ulangi</Text>
+            </Pressable>
           </View>
-        ))}
+        </View>
+
       </View>
-
-      {/* Result box */}
-      <View style={styles.resultArea}>
-        {"error" in (quizResult || {}) && quizResult && "error" in quizResult && (
-          <View style={[styles.resultBox, styles.resultError]}>
-            <Text style={styles.resultErrorText}>{quizResult.error}</Text>
-          </View>
-        )}
-
-        {quizResult && "score" in quizResult && (
-          <View style={[styles.resultBox, quizResult.isPerfect ? styles.resultPerfect : styles.resultNormal]}>
-            <Text style={styles.resultTitle}>
-              {quizResult.isPerfect ? "SELAMAT! SKOR SEMPURNA!" : "Hasil Latihanmu"}
-            </Text>
-            <View style={styles.resultRow}>
-              <Text style={styles.resultScore}>{quizResult.score} / 100</Text>
-              <Text style={styles.resultMeta}>
-                ({quizResult.correct} benar dari {quizResult.total})
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        <Pressable
-          onPress={handleSubmit}
-          disabled={isSubmitted}
-          style={[styles.btnPrimary, isSubmitted && styles.btnDisabled]}
-        >
-          <Text style={styles.btnPrimaryText}>{isSubmitted ? "Jawaban Terkunci" : "Cek Kesimpulan"}</Text>
-        </Pressable>
-
-        <Pressable onPress={handleReset} style={styles.btnSecondary}>
-          <RefreshCcw size={16} color="#374151" />
-          <Text style={styles.btnSecondaryText}>Ulangi Simulasi</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 12,
+  container: { backgroundColor: "#FFF", alignItems: "center", paddingTop: 26 },
+  screenTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  title: { fontSize: 18, fontWeight: "900", marginBottom: 14 },
+
+  beakerRow: { flexDirection: "row", justifyContent: "space-between", width: "94%" },
+  beakerWrapper: { width: "32%", alignItems: "center" },
+
+  beaker: {
+    width: BEAKER_SIZE,
+    height: BEAKER_SIZE * 1.35,
+    borderWidth: 2,
+    borderColor: "#10b981",
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  h2: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
+  beakerLabel: { position: "absolute", top: 8, fontWeight: "900", color: "#6b7280" },
+
+  resultContainer: { alignItems: "center", gap: 6 },
+  miniLakmus: { width: 54, height: 22, borderRadius: 6, justifyContent: "center", alignItems: "center" },
+  miniText: { color: "#fff", fontSize: 11, fontWeight: "900" },
+
+  pickerWrap: { width: "100%", marginTop: 10 },
+  pickerTitle: { fontSize: 11, fontWeight: "800", color: "#374151", marginBottom: 6, alignSelf: "flex-start" },
+  pickerBorder: {
+    width: "100%",
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 10,
+    backgroundColor: "#f0f9ff",
+    overflow: "hidden",
   },
-  p: {
-    fontSize: 13,
-    color: "#4B5563",
-    lineHeight: 18,
+  picker: { width: "100%", height: 44 },
+
+  subText: { marginTop: 6, fontSize: 13, fontWeight: "900", color: "#111827" },
+
+  dragZone: { marginTop: 18, alignItems: "center", width: "100%" },
+  hint: { fontSize: 13, color: "#6b7280", marginBottom: 14 },
+
+  lakmusGroup: { flexDirection: "row", gap: 30 },
+  lakmus: { width: 90, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center", elevation: 10 },
+  red: { backgroundColor: "#ef4444" },
+  blue: { backgroundColor: "#0062ffff" },
+  lakmusText: { color: "#fff", fontWeight: "900", fontSize: 12, letterSpacing: 0.4 },
+
+  btnCek: {
+    marginTop: 18,
+    backgroundColor: "#10b981",
+    paddingVertical: 14,
+    paddingHorizontal: 58,
+    borderRadius: 999,
   },
-  lakmusWrap: {
+  btnText: { color: "#fff", fontWeight: "900", fontSize: 16 },
+
+  dropdownTrigger: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: "#0062ffff",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingLeft: 8,
+    paddingRight: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "#FEFCE8",
+    justifyContent: "space-between",
   },
-  lakmusLabel: {
-    fontSize: 14,
+
+  dropdownText: {
+    fontSize: 11,
     fontWeight: "600",
+    color: "#111827",
+  },
+
+  placeholder: {
+    color: "#9ca3af",
+  },
+
+  arrow: {
+    fontSize: 12,
     color: "#374151",
   },
-  lakmusChip: {
+
+  dropdownMenu: {
+    marginTop: 6,
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    elevation: 6,
+  },
+
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+
+  dropdownItemText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  // ===== LAKMUS BAR (WEB-LIKE) =====
+  lakmusBar: {
+    width: "100%",
+    backgroundColor: "#FEFCE8",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: 'flex-end', // Biar lakmusnya geser ke kanan
+    gap: 17,
+    marginBottom: 14,
+    zIndex: 10, // Biar pas di-drag lakmusnya ada di depan gelas
+  },
+  lakmusBarLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#111827",
+    marginRight: 4,
+  },
+  lakmusPill: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
+    elevation: 2,
   },
-  lakmusRed: { backgroundColor: "#DC2626" },
-  lakmusBlue: { backgroundColor: "#2563EB" },
-  lakmusSelected: {
-    transform: [{ scale: 1.03 }],
-    outlineColor: "transparent",
-    borderWidth: 2,
-    borderColor: "#111827",
+  lakmusPillRed: {
+    backgroundColor: "#ff0000ff",
   },
-  lakmusChipText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
+  lakmusPillBlue: {
+    backgroundColor: "#0051ffff",
   },
-
-  grid: {
-    gap: 14,
-    marginTop: 6,
+  lakmusPillActive: {
+    transform: [{ scale: 1.02 }],
   },
-  cardWrap: {
-    gap: 10,
-  },
-  beaker: {
-    borderWidth: 2,
-    borderColor: "#34D399",
-    borderRadius: 16,
-    backgroundColor: "#FFFFFF",
-    padding: 14,
-    minHeight: 140,
-    justifyContent: "space-between",
-  },
-  beakerDisabled: { opacity: 0.7 },
-  beakerTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#374151",
-  },
-  beakerHint: {
-    fontSize: 11,
-    color: "#9CA3AF",
-    textAlign: "right",
-  },
-  dropList: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    gap: 6,
-  },
-  drop: {
-    width: 56,
-    height: 22,
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dropText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  dropRed: { backgroundColor: "#DC2626" },
-  dropBlue: { backgroundColor: "#2563EB" },
-
-  pickerWrap: {
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-  },
-  pickerDisabled: { backgroundColor: "#E5E7EB" },
-
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  correct: { color: "#16A34A" },
-  wrong: { color: "#DC2626" },
-
-  resultArea: { marginTop: 8, gap: 10 },
-  resultBox: {
-    borderWidth: 2,
-    borderRadius: 16,
-    padding: 14,
-  },
-  resultNormal: { backgroundColor: "#EFF6FF", borderColor: "#60A5FA" },
-  resultPerfect: { backgroundColor: "#ECFDF5", borderColor: "#34D399" },
-  resultError: { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" },
-  resultTitle: {
-    fontSize: 16,
+  lakmusPillText: {
+    color: "white",
     fontWeight: "900",
-    marginBottom: 8,
-    color: "#111827",
-  },
-  resultRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-  },
-  resultScore: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: "#1D4ED8",
-  },
-  resultMeta: {
-    fontSize: 13,
-    color: "#4B5563",
-    fontWeight: "600",
-  },
-  resultErrorText: {
-    color: "#991B1B",
-    fontWeight: "700",
+    fontSize: 12,
   },
 
-  actions: {
+  // ===== BUTTON ROW (WEB-LIKE) =====
+  actionRow: {
+    marginTop: 16,
+    width: "100%",
     flexDirection: "row",
     gap: 12,
-    marginTop: 10,
-  },
-  btnPrimary: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: "#2563EB",
-    alignItems: "center",
     justifyContent: "center",
   },
-  btnDisabled: { backgroundColor: "#9CA3AF" },
+  btnPrimary: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    elevation: 4,
+  },
   btnPrimaryText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    color: "white",
+    fontWeight: "900",
     fontSize: 13,
   },
   btnSecondary: {
-    flexDirection: "row",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 14,
     backgroundColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    elevation: 2,
   },
   btnSecondaryText: {
-    color: "#374151",
-    fontWeight: "800",
+    color: "#111827",
+    fontWeight: "900",
     fontSize: 13,
   },
+  pillContainer: {
+    flexDirection: "row",
+    gap: 15,
+    flex: 1,
+  },
+  resultBlock: { marginTop: 20, width: '94%', gap: 12 },
+  resultBox: { padding: 15, borderRadius: 15, borderWidth: 2 },
+  resultGreen: { backgroundColor: "#ECFDF5", borderColor: "#10b981" },
+  resultBlue: { backgroundColor: "#EFF6FF", borderColor: "#3b82f6" },
+  resultTitle: { fontSize: 16, fontWeight: "800", color: "#111827", marginBottom: 5 },
+  resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  resultScore: { fontSize: 24, fontWeight: "900", color: "#2563eb" },
+  resultMeta: { color: "#4b5563", fontSize: 14 },
+  actions: { flexDirection: "row", gap: 10, marginTop: 10 },
+  primaryBtn: { flex: 1, backgroundColor: "#2563eb", padding: 15, borderRadius: 12, alignItems: "center" },
+  primaryBtnText: { color: "white", fontWeight: "800" },
+  btnDisabled: { backgroundColor: "#9ca3af" },
+  secondaryBtn: { flexDirection: "row", gap: 8, backgroundColor: "#e5e7eb", padding: 15, borderRadius: 12, alignItems: "center" },
+  secondaryBtnText: { fontWeight: "700", color: "#374151" },
 });
