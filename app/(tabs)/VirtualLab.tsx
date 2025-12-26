@@ -59,6 +59,9 @@ export default function VirtualLab() {
   const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi.");
   const [isSimulating, setIsSimulating] = useState(false);
 
+  // ✅ NEW: simpan nilai pH buat ditampilkan di "Hasil & Analisis"
+  const [finalPh, setFinalPh] = useState("?");
+
   // --- Animated values ---
   const acidPour = useRef(new Animated.Value(0)).current; // 0 -> 1 (transform tabung)
   const basePour = useRef(new Animated.Value(0)).current;
@@ -294,6 +297,9 @@ export default function VirtualLab() {
     setFinalState(state);
     setIndicatorColor(phToColor(ph));
 
+    // ✅ NEW: simpan pH untuk ditampilkan
+    setFinalPh(ph.toFixed(2));
+
     // label mL tetap total asli (sebentar), lalu visual reset akan bikin 0 mL
     setBeakerLiquidLevelText(`${totalMl.toFixed(0)} mL`);
 
@@ -318,6 +324,9 @@ export default function VirtualLab() {
     setFinalState("?");
     setIndicatorColor("#ccc");
     setSimulationStatus("Siap untuk simulasi.");
+
+    // ✅ NEW: reset pH juga
+    setFinalPh("?");
 
     acidPour.setValue(0);
     basePour.setValue(0);
@@ -503,6 +512,12 @@ export default function VirtualLab() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Hasil & Analisis</Text>
 
+          {/* ✅ NEW: tampilkan pH */}
+          <View style={styles.resultRow}>
+            <Text style={styles.bold}>pH Akhir:</Text>
+            <Text> {finalPh}</Text>
+          </View>
+
           <View style={styles.resultRow}>
             <Text style={styles.bold}>Total Volume:</Text>
             <Text> {totalVolume} mL</Text>
@@ -526,6 +541,119 @@ export default function VirtualLab() {
           <View style={styles.indicatorRow}>
             <Text style={styles.bold}>Warna Indikator: </Text>
             <View style={[styles.colorBox, { backgroundColor: indicatorColor }]} />
+          </View>
+
+          {/* ✅ NEW: Penjelasan Konsep (persis isi gambar) */}
+          <View style={{ marginTop: 18 }}>
+            <Text style={styles.sectionTitle}>Penjelasan Konsep:</Text>
+
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Perhitungan pH: </Text>
+                pH dihitung berdasarkan konsentrasi ion yang tersisa setelah reaksi netralisasi.
+              </Text>
+            </View>
+
+            <View style={{ marginLeft: 18, marginTop: 6 }}>
+              <Text style={styles.subLine}>Jika larutan bersifat asam (H⁺ berlebih):</Text>
+              <Text style={styles.subLine}>pH = −log₁₀ [H⁺]</Text>
+
+              <Text style={[styles.subLine, { marginTop: 6 }]}>Jika larutan bersifat basa (OH⁻ berlebih):</Text>
+              <Text style={styles.subLine}>pOH = −log₁₀ [OH⁻]</Text>
+              <Text style={styles.subLine}>pH = 14 − pOH</Text>
+            </View>
+
+            {/* ✅ REVISED: Larutan Netral jadi bullet + bagian bawahnya rata (nggak ke kiri bgt) */}
+            <View style={[styles.bulletRow, { marginTop: 8 }]}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Larutan Netral: </Text>
+                Terjadi ketika jumlah mol ion H⁺ sama dengan jumlah mol ion OH⁻. Seluruh ion H⁺ dan OH⁻ bereaksi habis
+                membentuk air (H₂O), sehingga tidak ada kelebihan asam maupun basa.
+              </Text>
+            </View>
+
+            <View style={{ marginLeft: 18, marginTop: 6 }}>
+              <Text style={styles.subLine}>Pada kondisi ini, nilai pH larutan adalah:</Text>
+              <Text style={[styles.subLine, { marginLeft: 1, marginTop: 4 }]}>pH = 7</Text>
+
+              <Text style={[styles.subLine, { marginTop: 6 }]}>
+                Contoh: 50 mL 0.1 M HCl dicampur dengan 50 mL 0.1 M NaOH. Karena mol H⁺ = mol OH⁻, larutan bersifat
+                netral dan indikator universal menunjukkan warna hijau.
+              </Text>
+            </View>
+
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Asam Kuat (HCl) & Basa Kuat (NaOH): </Text>
+                Berdisosiasi sempurna dalam air.
+              </Text>
+            </View>
+
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Stoikiometri: </Text>
+                Jumlah mol (n) dihitung dari konsentrasi (M) dan volume (V) dalam Liter: n = M * V.
+              </Text>
+            </View>
+
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Netralisasi: </Text>
+                Ion H⁺ dari asam bereaksi dengan ion OH⁻ dari basa membentuk air (H₂O). Jumlah Jumlah mol yang berlebih
+                (H⁺ atau OH⁻) menentukan sifat akhir larutan.
+              </Text>
+            </View>
+
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>pH: </Text>
+                Ukuran keasaman atau kebasaan larutan.
+              </Text>
+            </View>
+
+            <View style={{ marginLeft: 18, marginTop: 6 }}>
+              <Text style={styles.subLine}>pH &lt; 7: Asam</Text>
+              <Text style={styles.subLine}>pH = 7: Netral</Text>
+              <Text style={styles.subLine}>pH &gt; 7: Basa</Text>
+            </View>
+
+            <View style={[styles.bulletRow, { marginTop: 10 }]}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={styles.bulletText}>
+                <Text style={styles.boldInline}>Indikator Universal: </Text>
+                Berubah warna sesuai dengan rentang pH larutan.
+              </Text>
+            </View>
+
+            <Text style={[styles.sectionTitle, { marginTop: 18 }]}>Eksperimen:</Text>
+
+            <View style={styles.numberRow}>
+              <Text style={styles.num}>1.</Text>
+              <Text style={styles.numberText}>
+                Coba campurkan volume dan konsentrasi yang sama (misal: 50 mL 0.1 M HCl dengan 50 mL 0.1 M NaOH). Apa
+                yang terjadi?
+              </Text>
+            </View>
+
+            <View style={styles.numberRow}>
+              <Text style={styles.num}>2.</Text>
+              <Text style={styles.numberText}>
+                Buat larutan asam (misal: 100 mL 0.1 M HCl dengan 20 mL 0.1 M NaOH). Cek pH dan warna.
+              </Text>
+            </View>
+
+            <View style={styles.numberRow}>
+              <Text style={styles.num}>3.</Text>
+              <Text style={styles.numberText}>
+                Buat larutan basa (misal: 20 mL 0.1 M HCl dengan 100 mL 0.1 M NaOH). Cek pH dan warna.
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -650,4 +778,16 @@ const styles = StyleSheet.create({
 
   indicatorRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   colorBox: { width: 60, height: 25, borderRadius: 5, marginLeft: 10, borderWidth: 1, borderColor: "#ccc" },
+
+  // ✅ NEW styles for konsep section
+  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#111827", marginBottom: 8 },
+  bulletRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 6 },
+  bulletDot: { width: 18, fontSize: 16, lineHeight: 22, color: "#111827" },
+  bulletText: { flex: 1, fontSize: 15, lineHeight: 22, color: "#111827" },
+  boldInline: { fontWeight: "800", color: "#111827" },
+  subLine: { fontSize: 15, lineHeight: 22, color: "#111827", marginTop: 2 },
+
+  numberRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 10 },
+  num: { width: 22, fontSize: 15, lineHeight: 22, fontWeight: "700", color: "#111827" },
+  numberText: { flex: 1, fontSize: 15, lineHeight: 22, color: "#111827" },
 });
