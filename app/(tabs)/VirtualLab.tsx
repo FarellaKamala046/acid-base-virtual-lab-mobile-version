@@ -56,7 +56,7 @@ export default function VirtualLab() {
   const [molOHMinus, setMolOHMinus] = useState("?");
   const [finalState, setFinalState] = useState("?");
   const [indicatorColor, setIndicatorColor] = useState("#ccc");
-  const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi.");
+  const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi");
   const [isSimulating, setIsSimulating] = useState(false);
 
   // ✅ NEW: simpan nilai pH buat ditampilkan di "Hasil & Analisis"
@@ -303,7 +303,7 @@ export default function VirtualLab() {
     // label mL tetap total asli (sebentar), lalu visual reset akan bikin 0 mL
     setBeakerLiquidLevelText(`${totalMl.toFixed(0)} mL`);
 
-    setSimulationStatus("Simulasi selesai.");
+    setSimulationStatus("Simulasi selesai");
     setIsSimulating(false);
 
     // ✅ NEW: habis kelar tuang + hitung, beaker kosong turun + tabung keisi lagi
@@ -323,7 +323,7 @@ export default function VirtualLab() {
     setMolOHMinus("?");
     setFinalState("?");
     setIndicatorColor("#ccc");
-    setSimulationStatus("Siap untuk simulasi.");
+    setSimulationStatus("Siap untuk simulasi");
 
     // ✅ NEW: reset pH juga
     setFinalPh("?");
