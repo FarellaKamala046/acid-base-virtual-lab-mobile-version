@@ -56,7 +56,7 @@ export default function VirtualLab() {
   const [molOHMinus, setMolOHMinus] = useState("?");
   const [finalState, setFinalState] = useState("?");
   const [indicatorColor, setIndicatorColor] = useState("#ccc");
-  const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi.");
+  const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi");
   const [isSimulating, setIsSimulating] = useState(false);
 
   // ✅ NEW: simpan nilai pH buat ditampilkan di "Hasil & Analisis"
@@ -409,35 +409,45 @@ export default function VirtualLab() {
           <Text style={styles.cardTitle}>Input Larutan</Text>
 
           <Text style={styles.inputLabel}>Asam Klorida (HCl)</Text>
+
+          {/* ✅ NEW: label di luar input (kayak gambar 3) */}
+          <Text style={styles.fieldLabel}>Konsentrasi HCl (M):</Text>
           <TextInput
             style={styles.input}
             value={hclConcentration}
             onChangeText={setHclConcentration}
             keyboardType="numeric"
-            placeholder="Konsentrasi (M)"
+            placeholder=""
           />
+
+          <Text style={styles.fieldLabel}>Volume HCl (mL):</Text>
           <TextInput
             style={styles.input}
             value={hclVolume}
             onChangeText={setHclVolume}
             keyboardType="numeric"
-            placeholder="Volume (mL)"
+            placeholder=""
           />
 
-          <Text style={[styles.inputLabel, { marginTop: 10 }]}>Natrium Hidroksida (NaOH)</Text>
+          <Text style={[styles.inputLabel, { marginTop: 14 }]}>Natrium Hidroksida (NaOH)</Text>
+
+          {/* ✅ NEW: label di luar input (kayak gambar 3) */}
+          <Text style={styles.fieldLabel}>Konsentrasi NaOH (M):</Text>
           <TextInput
             style={styles.input}
             value={naohConcentration}
             onChangeText={setNaohConcentration}
             keyboardType="numeric"
-            placeholder="Konsentrasi (M)"
+            placeholder=""
           />
+
+          <Text style={styles.fieldLabel}>Volume NaOH (mL):</Text>
           <TextInput
             style={styles.input}
             value={naohVolume}
             onChangeText={setNaohVolume}
             keyboardType="numeric"
-            placeholder="Volume (mL)"
+            placeholder=""
           />
 
           <TouchableOpacity
@@ -564,7 +574,7 @@ export default function VirtualLab() {
               <Text style={styles.subLine}>pH = 14 − pOH</Text>
             </View>
 
-            {/* ✅ REVISED: Larutan Netral jadi bullet + bagian bawahnya rata (nggak ke kiri bgt) */}
+            {/* ✅ REVISED: Larutan Netral jadi bullet + bagian bawahnya rata */}
             <View style={[styles.bulletRow, { marginTop: 8 }]}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={styles.bulletText}>
@@ -576,7 +586,9 @@ export default function VirtualLab() {
 
             <View style={{ marginLeft: 18, marginTop: 6 }}>
               <Text style={styles.subLine}>Pada kondisi ini, nilai pH larutan adalah:</Text>
-              <Text style={[styles.subLine, { marginLeft: 1, marginTop: 4 }]}>pH = 7</Text>
+
+              {/* ✅ FIX: pH=7 nggak “nyelonong ke kanan” */}
+              <Text style={[styles.subLine, { marginTop: 4 }]}>pH = 7</Text>
 
               <Text style={[styles.subLine, { marginTop: 6 }]}>
                 Contoh: 50 mL 0.1 M HCl dicampur dengan 50 mL 0.1 M NaOH. Karena mol H⁺ = mol OH⁻, larutan bersifat
@@ -682,13 +694,17 @@ const styles = StyleSheet.create({
 
   cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15, color: "#1f2937" },
 
-  inputLabel: { fontSize: 14, fontWeight: "600", color: "#4b5563", marginBottom: 5 },
+  inputLabel: { fontSize: 14, fontWeight: "600", color: "#4b5563", marginBottom: 8 },
+
+  // ✅ NEW: label field seperti gambar 3
+  fieldLabel: { fontSize: 14, color: "#111827", marginBottom: 6 },
+
   input: {
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 14,
     fontSize: 14,
   },
 
