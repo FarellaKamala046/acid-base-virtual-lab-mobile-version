@@ -1,22 +1,10 @@
 import { useRouter } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth';
 import React from 'react';
-import {
-  Alert,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-import { auth } from '../../firebaseConfig'; // Pastikan path benar
-import userProfileImg from "../../assets/images/user-profile.jpg";
+import { Alert, Image, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { auth } from '../../firebaseConfig';
 
-// Import Assets
+import userProfileImg from "../../assets/images/user-profile.jpg";
 import materiImage from '../../assets/images/course.jpg';
 import interaktifGif from '../../assets/images/interaktif.gif';
 import labImage from '../../assets/images/lab.jpg';
@@ -39,7 +27,6 @@ function FeatureCard({ imageSrc, title, description, onPress }: any) {
   );
 }
 
-// Komponen Card buat yang bisa digeser (Horizontal)
 function KeyFeatureCard({ imageSrc, title, description }: any) {
   return (
     <View style={styles.keyCard}>
@@ -55,18 +42,15 @@ export default function HomePage() {
   const router = useRouter();
   const { logout } = useAuth() as any;
 
-  // Efek buat mantau login user secara real-time
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser); // Kalau ada user, dia ngisi data. Kalau logout, jadi null.
+      setUser(currentUser); 
     });
     return () => unsubscribe();
   }, []);
 
-  // STATUS LOGIN (Ganti ke 'true' buat liat foto profil, 'false' buat tombol login)
   const isLoggedIn = !!user;
   const userPhoto = user?.photoURL || "https://via.placeholder.com/40";
-  
   const handleProtectedNavigation = (targetRoute: string) => {
     if (isLoggedIn) {
       router.push(targetRoute as any);
@@ -78,7 +62,6 @@ export default function HomePage() {
   const handleLogout = async () => {
   try {
     await logout();
-    // Biasanya otomatis redirect ke Login karena AuthContext
   } catch (error) {
     console.error("Gagal logout:", error);
   }
@@ -88,7 +71,6 @@ export default function HomePage() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
-      {/* --- CUSTOM HEADER --- */}
       <View style={styles.customHeader}>
         <Text style={styles.brandText}>AcidBaseVLab</Text>
         
@@ -116,9 +98,8 @@ export default function HomePage() {
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
         <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>Selamat Datang!</Text>
+          <Text style={styles.heroTitle}>Selamat Datang di Acid-Base Virtual Lab</Text>
           <Text style={styles.heroSubtitle}>Ayo belajar kimia dengan menyenangkan!</Text>
           <TouchableOpacity 
             style={styles.heroButton} 
@@ -128,54 +109,52 @@ export default function HomePage() {
           </TouchableOpacity>
         </View>
 
-        {/* Petualangan Belajar */}
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Mulai Petualangan Belajarmu</Text>
           <View style={styles.grid}>
             <FeatureCard
               imageSrc={materiImage}
               title="Materi Pembelajaran"
-              description="Pelajari konsep dasar asam-basa secara mendalam."
+              description="Pelajari konsep dasar asam-basa, teori, indikator, dan perhitungan pH secara mendalam."
               onPress={() => handleProtectedNavigation('/Course')}
             />
             <FeatureCard
               imageSrc={labImage}
               title="Virtual Lab"
-              description="Eksperimen titrasi di laboratorium virtual interaktif."
+              description="Lakukan eksperimen titrasi dan uji indikator di laboratorium virtual yang aman dan interaktif."
               onPress={() => handleProtectedNavigation('/VirtualLab')}
             />
             <FeatureCard
               imageSrc={kuisImage}
               title="Kuis & Latihan"
-              description="Uji pemahamanmu melalui berbagai kuis menantang."
+              description="Uji pemahamanmu melalui berbagai kuis dan latihan soal interaktif yang menantang."
               onPress={() => handleProtectedNavigation('/Quiz')}
             /> 
           </View>
         </View>
 
-        {/* --- FITUR UNGGULAN (YANG BISA DIGESER) --- */}
         <View style={styles.section}>
           <Text style={styles.sectionHeader}>Fitur Unggulan Kami</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
             <KeyFeatureCard
               imageSrc={visualGif}
               title="Visualisasi Menarik"
-              description="Belajar materi asam basa dengan tampilan website yang menarik."
+              description="Lihat perubahan warna dan reaksi kimia melalui animasi yang jelas dan mudah dipahami."
             />
             <KeyFeatureCard
               imageSrc={interaktifGif}
               title="Interaktif"
-              description="Belajar sambil praktik! Uji pemahamanmu dengan latihan yang interaktif."
+              description="Kamu bisa mengontrol alat lab, menuang larutan, dan melihat hasil secara real-time."
             />
             <KeyFeatureCard
               imageSrc={pembelajaranGif}
               title="Video Pembelajaran"
-              description="Video penjelasan singkat untuk membantumu memahami konsep."
+              description="Video penjelasan singkat untuk membantumu memahami konsep-konsep yang sulit."
             />
             <KeyFeatureCard
               imageSrc={latihanGif}
               title="Latihan Menyenangkan"
-              description="Latihan dan kuis yang akan menguji pemahamanmu."
+              description="Kuis dalam bentuk gamifikasi yang membuat belajar tidak membosankan."
             />
           </ScrollView>
         </View>
@@ -228,12 +207,12 @@ const styles = StyleSheet.create({
   profileRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10, // Jarak antara foto dan icon logout Ken
+      gap: 10,
     },
 
     logoutIconBtn: {
       padding: 8,
-      backgroundColor: '#FEF2F2', // Background merah muda transparan biar cakep
+      backgroundColor: '#FEF2F2', 
       borderRadius: 10,
       justifyContent: 'center',
       alignItems: 'center',
@@ -253,13 +232,12 @@ const styles = StyleSheet.create({
   section: { padding: 15 },
   sectionHeader: { fontSize: 20, fontWeight: 'bold', color: '#1f2937', marginBottom: 15 },
   grid: { gap: 15 },
-  featureCard: { backgroundColor: 'white', borderRadius: 15, overflow: 'hidden', elevation: 3, marginBottom: 15 },
+  featureCard: { backgroundColor: 'white', borderRadius: 15, overflow: 'hidden', elevation: 3, marginBottom: 15, },
   featureImage: { width: '100%', height: 160 },
   featureContent: { padding: 15 },
-  featureTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
-  featureDesc: { fontSize: 13, color: '#4b5563', marginTop: 5 },
+  featureTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937', textAlign: 'center' },
+  featureDesc: { fontSize: 13, color: '#4b5563', marginTop: 5, textAlign: 'center' },
   
-  // Styles buat Horizontal Scroll
   horizontalScroll: { flexDirection: 'row' },
   keyCard: { backgroundColor: 'white', padding: 15, borderRadius: 15, width: 220, marginRight: 15, elevation: 2, alignItems: 'center' },
   keyImage: { width: 120, height: 120, marginBottom: 10 },

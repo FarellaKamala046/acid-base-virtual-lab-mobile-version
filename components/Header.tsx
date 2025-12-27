@@ -51,14 +51,14 @@ export default function Header(): React.ReactElement {
         ) : (
           <View style={styles.authButtons}>
             <Pressable
-              onPress={() => navigation.navigate("Login")} // nama screen: "Login"
+              onPress={() => navigation.navigate("Login")} 
               style={[styles.btn, styles.btnOutline]}
             >
               <Text style={[styles.btnText, styles.btnOutlineText]}>Login</Text>
             </Pressable>
 
             <Pressable
-              onPress={() => navigation.navigate("Register")} // nama screen: "Register"
+              onPress={() => navigation.navigate("Register")}
               style={[styles.btn, styles.btnSolid]}
             >
               <Text style={[styles.btnText, styles.btnSolidText]}>Register</Text>
@@ -108,10 +108,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: { color: "#FFFFFF", fontWeight: "700" },
-  userTextWrap: { display: "none" }, // kalau mau tampil di layar besar, bisa kamu atur pakai Dimensions
+  userTextWrap: { display: "none" }, 
   emailText: { fontSize: 12, fontWeight: "600", color: "#111827" },
   roleText: { fontSize: 11, color: "#6B7280" },
-
   authButtons: { flexDirection: "row", gap: 10 },
   btn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
   btnText: { fontSize: 13, fontWeight: "700" },

@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
-// --- Definisi Tipe Data Ken ---
 type Step = 
   | { id: string; kind: "input"; prompt: string; answer: string; unit?: string; calculation: (m: number, v: number) => number }
   | { id: string; kind: "choice"; prompt: string; answer: string; options: string[] }
@@ -37,8 +36,6 @@ export default function LatihanBab3() {
   const [stepStatus, setStepStatus] = useState<Record<string, "correct" | "incorrect" | undefined>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState<{ score: number } | null>(null);
-
-  // Kalkulasi Jawaban Benar (Gaya Ken)
   const correctAnswers = useMemo(() => {
     const hPlus = PROBLEM.molarity * PROBLEM.valence;
     return {
@@ -67,7 +64,7 @@ export default function LatihanBab3() {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);
         await setDoc(userRef, { 
-          Bab3Score: finalScore // Langsung simpan nilai terbaru Kenlyn
+          Bab3Score: finalScore 
         }, { merge: true });
         await refreshUserScores?.();
       } catch (e) { console.error("Firebase Error:", e); }
@@ -85,9 +82,7 @@ export default function LatihanBab3() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* <Text style={styles.title}>Latihan Menghitung pH</Text> */}
-      
+    <ScrollView contentContainerStyle={styles.container}>      
       <View style={styles.problemBox}>
         <Text style={styles.problemText}>{PROBLEM.text}</Text>
       </View>

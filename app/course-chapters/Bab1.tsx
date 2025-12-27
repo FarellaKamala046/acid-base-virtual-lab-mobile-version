@@ -4,13 +4,11 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 export default function Bab1() {
   return (
     <ScrollView style={styles.container}>
-      {/* 1. Apa itu Asam? */}
       <Text style={styles.h2}>1. Apa itu Asam?</Text>
       <Text style={styles.p}>
         Asam adalah zat yang secara umum kita kenali dari rasanya yang masam. Kata "asam" sendiri berasal dari bahasa Latin acidus yang artinya "masam". Sifat-sifat asam yaitu:
       </Text>
 
-      {/* List Sifat-sifat Asam */}
       <View style={styles.listContainer}>
         <Text style={styles.listItem}>• <Text style={styles.bold}>Rasa:</Text> Masam atau kecut (Tapi jangan pernah mencicipi zat kimia di lab!).</Text>
         <Text style={styles.listItem}>• <Text style={styles.bold}>Konduktivitas:</Text> Larutan asam dapat menghantarkan arus listrik (elektrolit).</Text>
@@ -20,8 +18,6 @@ export default function Bab1() {
       </View>
 
       <Text style={styles.p}>Berikut adalah contoh asam dalam kehidupan sehari-hari:</Text>
-
-      {/* Tabel Asam (Dibuat manual dengan View) */}
       <View style={styles.table}>
         <View style={[styles.tableRow, styles.tableHeader]}>
           <Text style={[styles.tableCell, styles.bold, { flex: 1 }]}>Nama Asam</Text>
@@ -50,7 +46,6 @@ export default function Bab1() {
         </View>
       </View>
 
-      {/* 2. Apa itu Basa? */}
       <Text style={styles.h2}>2. Apa itu Basa?</Text>
       <Text style={styles.p}>
         Basa (atau base / alkali) adalah zat yang punya sifat berlawanan dengan asam. Secara umum, basa terasa pahit dan licin saat disentuh (seperti sabun). Sifat-sifat basa yaitu:
@@ -66,7 +61,6 @@ export default function Bab1() {
 
       <Text style={styles.p}>Berikut adalah contoh basa dalam kehidupan sehari-hari:</Text>
 
-      {/* Tabel Basa */}
       <View style={styles.table}>
         <View style={[styles.tableRow, styles.tableHeader]}>
           <Text style={[styles.tableCell, styles.bold, { flex: 1 }]}>Nama Basa</Text>
@@ -90,7 +84,6 @@ export default function Bab1() {
         </View>
       </View>
 
-      {/* 3. Indikator */}
       <Text style={styles.h2}>3. Indikator: Si "Pendeteksi" Asam Basa</Text>
       <Text style={styles.p}>
         Gimana cara kita tahu sebuah larutan itu asam atau basa kalau kita nggak boleh mencicipinya? Jawabannya: pakai <Text style={styles.bold}>Indikator</Text>.
@@ -104,7 +97,6 @@ export default function Bab1() {
       </View>
 
       <Text style={styles.h3}>B. Indikator Alami</Text>
-      {/* Tabel Indikator Alami */}
       <View style={styles.table}>
         <View style={[styles.tableRow, styles.tableHeader]}>
           <Text style={[styles.tableCell, styles.bold, { flex: 1 }]}>Bahan Alami</Text>
@@ -123,7 +115,6 @@ export default function Bab1() {
         </View>
       </View>
       
-      {/* Spacer bawah biar nggak mentok navigasi */}
       <View style={{ height: 50 }} />
     </ScrollView>
   );

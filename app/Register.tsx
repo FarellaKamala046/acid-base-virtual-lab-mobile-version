@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
-// Import Asset Gambar
 import LoginImage from '../assets/images/login-regis-gambar2.jpg';
 
 export default function RegisterScreen() {
@@ -17,9 +16,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setError('');
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update nama profil (Penting buat poin UCD agar user merasa personal)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);      
       await updateProfile(userCredential.user, {
         displayName: name
       });

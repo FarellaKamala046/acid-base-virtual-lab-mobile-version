@@ -8,7 +8,6 @@ export default function Bab3() {
         Selamat datang di Bab 3! Sekarang kita akan belajar cara mengukur kekuatan asam dan basa menggunakan skala pH dan belajar cara menghitungnya, terutama untuk asam dan basa kuat.
       </Text>
 
-      {/* 1. Apa itu pH? */}
       <Text style={styles.h2}>1. Apa itu pH? (Derajat Keasaman)</Text>
       <Text style={styles.p}>
         pH adalah ukuran tingkat keasaman atau kebasaan suatu larutan, dengan skala dari 0 hingga 14.
@@ -22,7 +21,6 @@ export default function Bab3() {
         Ingat: Skala pH itu logaritmik! Beda 1 pH = beda 10x keasaman/kebasaan.
       </Text>
 
-      {/* 2. Hubungan pH dengan Konsentrasi */}
       <Text style={styles.h2}>2. Hubungan pH dengan Konsentrasi Ion H⁺</Text>
       <Text style={styles.p}>
         Keasaman ditentukan oleh konsentrasi ion hidrogen [H⁺]. Rumusnya:
@@ -34,7 +32,6 @@ export default function Bab3() {
         <Text style={styles.codeTextLarge}>[H⁺] = 10⁻ᵖᴴ</Text>
       </View>
 
-      {/* 3. Apa itu pOH? */}
       <Text style={styles.h2}>3. Apa itu pOH? (Ukuran Kebasaan)</Text>
       <Text style={styles.p}>
         Mirip dengan pH, pOH mengukur kebasaan berdasarkan konsentrasi ion hidroksida [OH⁻].
@@ -43,7 +40,6 @@ export default function Bab3() {
         <Text style={styles.codeTextLarge}>pOH = - log [OH⁻]</Text>
       </View>
 
-      {/* 4. Hubungan pH dan pOH */}
       <Text style={styles.h2}>4. Hubungan pH dan pOH</Text>
       <Text style={styles.p}>
         Pada suhu 25°C, keduanya selalu berhubungan:
@@ -52,7 +48,6 @@ export default function Bab3() {
         <Text style={styles.codeTextLarge}>pH + pOH = 14</Text>
       </View>
 
-      {/* 5. Asam Kuat dan Basa Kuat */}
       <Text style={styles.h2}>5. Asam Kuat dan Basa Kuat</Text>
       <Text style={styles.p}>
         Asam/Basa Kuat adalah yang terionisasi sempurna (100%) dalam air. Contoh umum:
@@ -62,7 +57,6 @@ export default function Bab3() {
         <Text style={styles.listItemSmall}>• <Text style={styles.bold}>Basa Kuat:</Text> NaOH, KOH, Ca(OH)₂</Text>
       </View>
 
-      {/* 6. Menghitung pH */}
       <Text style={styles.h2}>6. Menghitung pH Asam Kuat dan Basa Kuat</Text>
       <Text style={styles.pBold}>Untuk Asam Kuat:</Text>
       <View style={[styles.codeBlock, { backgroundColor: '#f0fdf4' }]}>

@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { HeaderBackButton } from '@react-navigation/elements';
 import { View, Text, StyleSheet } from 'react-native';
+// import * as WebBrowser from "expo-web-browser";
 
 export {
   ErrorBoundary,
@@ -17,6 +18,7 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+// WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -49,19 +51,15 @@ function RootLayoutNav() {
   const router = useRouter();
   return (
     <Stack>
-      {/* 1. Folder Utama (Tabs) */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       
-      {/* 2. Halaman Login (Back Button Biru dengan Teks 'Back') ✨ */}
       <Stack.Screen 
         name="Login" 
         options={{ 
           headerTitle: 'Masuk Akun',
           headerShown: true,
-          // headerBackVisible: true,     // Pastikan tombol back muncul
-          headerBackTitle: 'Back',      // Memaksa teks jadi "Back", bukan "(tabs)"
-          headerTintColor: '#007AFF',   // Warna biru khas iOS untuk tombol back
-          // animation: 'slide_from_right',
+          headerBackTitle: 'Back',   
+          headerTintColor: '#007AFF', 
           headerLeft: (props) => (
             <View style={{ marginLeft: -15, flexDirection: 'row', alignItems: 'center' }}> 
               <HeaderBackButton
@@ -74,7 +72,6 @@ function RootLayoutNav() {
         }} 
       />
 
-      {/* 3. Halaman Register ✨ */}
       <Stack.Screen 
         name="Register" 
         options={{ 

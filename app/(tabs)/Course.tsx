@@ -1,26 +1,16 @@
 import { useMemo, useState } from 'react';
-import {
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import YoutubePlayer from "react-native-youtube-iframe";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from "../../context/AuthContext";
 import { Award, CheckCircle2 } from "lucide-react-native";
 
-// Import Chapters
 import Bab1 from '../course-chapters/Bab1';
 import Bab2 from '../course-chapters/Bab2';
 import Bab3 from '../course-chapters/Bab3';
 import Bab4 from '../course-chapters/Bab4';
 
-// Import Latihan (Pastikan path-nya benar ya Ken!)
 import LatihanBab1 from '../../components/LatihanBab1';
 import LatihanBab2 from '../../components/LatihanBab2';
 import LatihanBab3 from '../../components/LatihanBab32';
@@ -28,23 +18,15 @@ import LatihanBab4 from '../../components/LatihanBab4';
 
 export default function CourseScreen() {
   const { userScores } = useAuth() as any;
-  // const [showExercise, setShowExercise] = useState(false);
   const router = useRouter()
 
-// const onSelectTopic = (topic: any) => {
-//   setSelectedTopic(topic);
-//   setShowExercise(false); // tiap ganti bab, latihan disembunyiin dulu
-// };
-
-
-  // Pakai : any[] biar gak merah-merah lagi Ken!
   const courseModules: any[] = useMemo(() => {
     return [
       {
         id: 'm1_intro',
         title: 'Bab 1: Pengenalan Asam Basa',
         youtubeId: 'SawRQQ1kaME',
-        content: Bab1, // Tulis nama komponennya aja, jangan pakai < /> dulu
+        content: Bab1,
         exercise: LatihanBab1, 
       },
       {
@@ -72,8 +54,6 @@ export default function CourseScreen() {
   }, [userScores]);
 
   const [selectedTopic, setSelectedTopic] = useState(courseModules[0]);
-
-  // Ini trik biar komponennya muncul dan gak kosong Ken!
   const ContentBody = selectedTopic.content;
   const ExerciseBody = selectedTopic.exercise;
 
@@ -82,13 +62,10 @@ export default function CourseScreen() {
       <StatusBar barStyle="dark-content" />
       
       <View style={styles.mainContainer}>
-        {/* List Materi (Horizontal) */}
         <View style={styles.sidebar}>
           <Text style={styles.sidebarTitle}>Overview Materi</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
           {courseModules.map((topic) => {
-            // Anggap saja kita ambil skor berdasarkan ID bab
-            // Misalnya: m1_intro -> Bab1, m2_teori -> Bab2
             const babKey = topic.id === 'm1_intro' ? 'Bab1' : 'Bab2';
             const score =
               topic.id === 'm1_intro' ? userScores?.Bab1Score :
@@ -103,14 +80,11 @@ export default function CourseScreen() {
                 style={[styles.moduleCard, selectedTopic.id === topic.id && styles.activeCard]}
                 onPress={() => setSelectedTopic(topic)}
               >
-                {/* Judul Bab */}
                 <Text style={[styles.moduleTitle, selectedTopic.id === topic.id && styles.activeText]}>
                   {topic.title}
                 </Text>
 
-                {/* CONTAINER SKOR & STATUS ✨ */}
                 <View style={styles.scoreInfoRow}>
-                  {/* Icon Nilai (Medal/Award) ✨ */}
                   <View style={styles.scoreItem}>
                     <Award size={16} color="#3b82f6" />
                     <Text style={styles.scoreValueText}>
@@ -118,7 +92,6 @@ export default function CourseScreen() {
                     </Text>
                   </View>
 
-                  {/* Icon Selesai ✨ */}
                   {score > 0 && (
                     <View style={styles.scoreItem}>
                       <CheckCircle2 size={16} color="#22c55e" />
@@ -135,7 +108,6 @@ export default function CourseScreen() {
         </View>
 
         <ScrollView style={styles.contentArea} showsVerticalScrollIndicator={false}>
-          {/* Video Player */}
           <View style={styles.videoWrapper}>
             <YoutubePlayer
               height={230}
@@ -144,16 +116,12 @@ export default function CourseScreen() {
             />
           </View>
 
-          {/* Content Materi */}
           <View style={styles.textContent}>
             <Text style={styles.title}>{selectedTopic.title}</Text>
-            {/* Panggil komponen di sini */}
             <ContentBody />
 
-            {/* PEMISAH */}
             <View style={styles.sectionDivider} />
 
-            {/* LATIHAN (LANGSUNG TAMPIL) */}
             <View style={styles.exerciseSectionCard}>
               <Text style={styles.exerciseSectionTitle}>
                 {selectedTopic.id === 'm1_intro' && "Latihan Uji Indikator Lakmus"}
@@ -172,42 +140,7 @@ export default function CourseScreen() {
                 <ExerciseBody />
               </View>
             </View>
-
-            {/* LATIHAN NYATU DI BAWAH MATERI
-            <View style={styles.exerciseContainer}>
-              <View style={styles.exerciseHeaderRow}>
-                <Text style={styles.exerciseTitle}>Latihan Uji Indikator Lakmus</Text>
-
-                <TouchableOpacity
-                  style={[styles.btnToggle, showExercise && styles.btnToggleActive]}
-                  onPress={() => setShowExercise((p) => !p)}
-                >
-                  <Text style={styles.btnToggleText}>
-                    {showExercise ? "Sembunyikan" : "Mulai Latihan"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {showExercise && (
-                <View style={styles.exerciseCard}>
-                  <ExerciseBody />
-                </View>
-              )}
-            </View> */}
-
-
           </View>
-
-          {/* AREA LATIHAN (No Fill, Clean Look!) */}
-          {/* <View style={styles.exerciseButtonSection}>
-          <Text style={styles.hintText}>Sudah siap mencoba simulasi?</Text>
-          <TouchableOpacity 
-            style={styles.btnLaunch}
-            // onPress={() => router.push('/LatihanBab1Screen' as any)}
-          >
-            <Text style={styles.btnText}>Ayo Latih Pengetahuanmu Sekarang!</Text>
-          </TouchableOpacity>
-        </View> */}
 
           <View style={{ height: 100 }} />
         </ScrollView>
@@ -219,11 +152,11 @@ export default function CourseScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff', // Sesuaikan warna background atas Ken
+    backgroundColor: '#fff',
   },
   mainContainer: {
     flex: 1,
-    backgroundColor: '#F3F4F6', // Kuning pastel kamu
+    backgroundColor: '#F3F4F6',
   },
   sidebar: {
     padding: 15,
@@ -242,18 +175,17 @@ const styles = StyleSheet.create({
   moduleCard: {
     padding: 12,
     backgroundColor: '#f0f0f0',
-    borderRadius: 15, // Lebih round biar estetik
+    borderRadius: 15,
     marginRight: 10,
-    width: 240,    // Dilebarin biar teks "Selesai" gak kepotong
-    height: 65,       // Kasih tinggi tetap biar seragam
+    width: 240,
+    height: 65,
     justifyContent: 'center',
     elevation: 2,
   },
   activeCard: {
-    // Pakai warna biru muda sesuai gambar referensi Ken
     backgroundColor: '#EBF5FF', 
     borderWidth: 1.5,
-    borderColor: '#3B82F6', // Outline biru biar tegas
+    borderColor: '#3B82F6',
   },
   moduleTitle: {
     fontSize: 13,
@@ -285,11 +217,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#333',
   },
-  // STYLE LATIHAN BARU (Tanpa Warna Biru)
   exerciseSection: {
     padding: 20,
     marginHorizontal: 15,
-    backgroundColor: 'transparent', // Biar Gak Ada Warna (No Fill)
+    backgroundColor: 'transparent',
   },
   divider: {
     height: 1,
@@ -312,7 +243,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   btnLaunch: {
-    backgroundColor: '#2563EB', // Biru cerah
+    backgroundColor: '#2563EB',
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 15,
@@ -383,7 +314,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     backgroundColor: "white",
     borderRadius: 20,
-    // padding: 1,
     elevation: 2,
     marginBottom: 14,
   },
@@ -403,7 +333,6 @@ const styles = StyleSheet.create({
   },
 
   exerciseInner: {
-    // biar LatihanBab1 “fit” dan gak mepet card
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
     paddingTop: 2,
@@ -412,13 +341,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 8,
-    alignSelf: 'flex-start', // Biar kotak badgenya gak selebar kartu
+    alignSelf: 'flex-start', 
   },
   badgeDone: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)', // Hijau transparan tipis
+    backgroundColor: 'rgba(16, 185, 129, 0.1)', 
   },
   badgePending: {
-    backgroundColor: 'rgba(107, 114, 128, 0.1)', // Abu-abu transparan tipis
+    backgroundColor: 'rgba(107, 114, 128, 0.1)',
   },
   badgeText: {
     fontSize: 11,
@@ -428,22 +357,22 @@ const styles = StyleSheet.create({
   scoreInfoRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12, // Kasih jarak antar item
+      gap: 12, 
       marginTop: 8,
     },
     scoreItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4, // Jarak icon ke teks
+      gap: 4,
     },
     scoreValueText: {
       fontSize: 13,
       fontWeight: '600',
-      color: '#757373ff', // Warna biru tua untuk angka nilai
+      color: '#757373ff', 
     },
     statusDoneText: {
       fontSize: 13,
       fontWeight: '600',
-      color: '#329656ff', // Warna hijau untuk status selesai
+      color: '#329656ff', 
     }
 });

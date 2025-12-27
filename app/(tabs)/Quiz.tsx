@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  Alert, SafeAreaView, StatusBar, Platform 
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, StatusBar, Platform } from "react-native";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { useAuth } from "../../context/AuthContext"; // Pastikan path benar ya Ken!
+import { useAuth } from "../../context/AuthContext";
 import { Award, CheckCircle2, ChevronLeft, Timer } from "lucide-react-native";
 
 const QuestionBank = {
@@ -71,7 +68,6 @@ export default function QuizScreen() {
     setIsRunning(false);
     clearInterval(timerRef.current);
 
-    // Simpan ke Firebase agar sinkron dengan Overview
     if (currentUser) {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);

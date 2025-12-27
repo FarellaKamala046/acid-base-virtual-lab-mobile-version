@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }, [currentUser, navigation]);
 
   if (!currentUser) {
-    return null; // jangan render apa-apa sambil redirect
+    return null; 
   }
 
   return <>{children}</>;

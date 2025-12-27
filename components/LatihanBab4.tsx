@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
-// --- Assets ---
 import imgBuret from "../assets/images/buret.png";
 import imgErlenmeyer from "../assets/images/erlenmeyer.png";
 import imgGelasKimia from "../assets/images/gelas-kimia.png";
@@ -24,20 +23,16 @@ const EQUIPMENT_LIST = [
 
 export default function LatihanBab4() {
   const { currentUser, userScores, refreshUserScores } = useAuth() as any;
-
   const [droppedLabels, setDroppedLabels] = useState<Record<string, string>>({});
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState<{ score: number; correct: number; total: number } | null>(null);
-
   const shuffledEquipment = useMemo(() => [...EQUIPMENT_LIST].sort(() => Math.random() - 0.5), []);
   const allLabels = useMemo(() => EQUIPMENT_LIST.map(item => ({ id: item.id, name: item.name })), []);
-
   const handlePlaceLabel = (equipmentId: string) => {
     if (isSubmitted || !selectedLabelId) return;
 
     const newDropped = { ...droppedLabels };
-    // Bersihkan jika label ini sudah ada di tempat lain
     Object.keys(newDropped).forEach(key => {
       if (newDropped[key] === selectedLabelId) delete newDropped[key];
     });
@@ -75,10 +70,6 @@ export default function LatihanBab4() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* <Text style={styles.h2}>Latihan Mengenal Alat Laboratorium</Text>
-      <Text style={styles.p}>Cara main: Pilih nama alat di bawah, lalu tap kotak gambar yang sesuai.</Text> */}
-
-      {/* Grid Alat */}
       <View style={styles.grid}>
         {shuffledEquipment.map((item) => {
           const droppedLabelId = droppedLabels[item.id];
@@ -118,7 +109,6 @@ export default function LatihanBab4() {
         })}
       </View>
 
-      {/* Area Pilihan Label */}
       <View style={styles.labelBank}>
         <Text style={styles.bankTitle}>Pilih Nama Alat:</Text>
         <View style={styles.bankGrid}>
@@ -145,7 +135,6 @@ export default function LatihanBab4() {
         </View>
       </View>
 
-      {/* Hasil & Tombol */}
       {quizResult && (
         <View style={[styles.resultBox, quizResult.score === 100 ? styles.resGreen : styles.resBlue]}>
           <Text style={styles.resTitle}>Hasil Tebak Alat:</Text>

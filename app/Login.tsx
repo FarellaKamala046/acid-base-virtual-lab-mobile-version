@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import {GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useEffect, useState } from "react";
+import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { auth } from "../firebaseConfig";
 
-import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-
+import * as WebBrowser from "expo-web-browser";
 import LoginImage from "../assets/images/login-regis-gambar2.jpg";
+import * as AuthSession from "expo-auth-session";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -17,44 +17,56 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  /**
-   * IMPORTANT:
-   * - Kamu perlu isi clientId sesuai platform.
-   * - Ambil dari Google Cloud / Firebase (OAuth client IDs).
-   *
-   * Minimal yang kepakai di Expo biasanya:
-   * - expoClientId (untuk Expo Go)
-   * - androidClientId (untuk Android build)
-   * - iosClientId (untuk iOS build)
-   * - webClientId (kalau kamu juga mau web tetap jalan)
-   */
+  const expoProxyRedirect = "https://auth.expo.io/@kenlynnwinata73/acid-base-vlab";
+  const webRedirect = "http://localhost:8081";
+
+  const redirectUri = Platform.OS === "web" ? webRedirect : expoProxyRedirect;
+  console.log("PLATFORM:", Platform.OS);
+  console.log("redirectUri:", redirectUri);
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: "707065142121-vfncqba6iskg6tru2egkeg02jibob0on.apps.googleusercontent.com",
+    clientId: "966017349107-95vo2mupbb5rksruqh8btm86lk8taah1.apps.googleusercontent.com",
+    webClientId: "966017349107-95vo2mupbb5rksruqh8btm86lk8taah1.apps.googleusercontent.com",
+    iosClientId: '966017349107-9v4f9ssooe7dql1u8scuvrfqcip4u6mm.apps.googleusercontent.com', 
+    redirectUri,
+    responseType: "id_token",
+    scopes: ["openid", "profile", "email"],
   });
 
   useEffect(() => {
     const signInFromGoogle = async () => {
-      if (response?.type !== "success") return;
+      console.log("AUTH RESPONSE:", response);
 
+      if (response?.type !== "success") return;
       try {
         const { authentication } = response;
-        if (!authentication?.idToken) {
-          Alert.alert("Google Sign-In gagal", "idToken tidak ditemukan. Pastikan OAuth Client ID kamu benar.");
+        const idToken =
+          authentication?.idToken ||
+          response?.params?.id_token;
+
+        if (!idToken) {
+          Alert.alert(
+            "Google Sign-In gagal",
+            "idToken tidak ditemukan. Login Google berhasil tapi token tidak diterima."
+          );
           return;
         }
-
-        const credential = GoogleAuthProvider.credential(authentication.idToken);
+        const credential = GoogleAuthProvider.credential(idToken);
         await signInWithCredential(auth, credential);
 
+        console.log("LOGIN GOOGLE BERHASIL");
         router.replace("/(tabs)");
       } catch (e: any) {
-        console.error(e);
-        Alert.alert("Google Sign-In error", e?.message ?? "Terjadi error saat login Google.");
+        console.error("GOOGLE LOGIN ERROR:", e);
+        Alert.alert(
+          "Google Sign-In error",
+          e?.message ?? "Terjadi error saat login Google."
+        );
       }
     };
 
     signInFromGoogle();
-  }, [response, router]);
+  }, [response]);
 
   const handleLogin = async () => {
     setError("");
@@ -67,14 +79,26 @@ export default function LoginScreen() {
     }
   };
 
+
   const handleGoogleLogin = async () => {
     setError("");
+
     try {
-      // promptAsync akan buka browser / webview untuk login Google
+      if (Platform.OS === "web") {
+        const provider = new GoogleAuthProvider();
+        provider.addScope("email");
+        provider.addScope("profile");
+
+        await signInWithPopup(auth, provider);
+        router.replace("/(tabs)");
+        return;
+      }
+
       await promptAsync();
+
     } catch (e: any) {
       console.error(e);
-      Alert.alert("Google Sign-In error", e?.message ?? "Tidak bisa membuka Google Sign-In.");
+      Alert.alert("Google Sign-In error", e?.message ?? "Tidak bisa login Google.");
     }
   };
 
@@ -119,10 +143,14 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.googleButton, !request && { opacity: 0.6 }]}
+            style={[
+              styles.googleButton,
+              Platform.OS !== "web" && !request && { opacity: 0.6 },
+            ]}
             onPress={handleGoogleLogin}
-            disabled={!request}
+            disabled={Platform.OS !== "web" && !request}
           >
+
             <Image
               source={{ uri: "https://www.svgrepo.com/show/475656/google-color.svg" }}
               style={styles.googleIcon}

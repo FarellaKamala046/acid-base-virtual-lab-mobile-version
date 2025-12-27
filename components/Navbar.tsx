@@ -4,13 +4,11 @@ import { useNavigation } from "@react-navigation/native";
 import { LogOut } from "lucide-react-native";
 
 import { useAuth } from "../context/AuthContext";
-// Kalau avatar kamu local image, pakai require.
-// Kalau kamu udah punya path yang bener, boleh ganti ini.
 const DefaultAvatar = require("../assets/user-profile.jpg");
 
 type MenuItem = {
   name: string;
-  route: string; // samain sama nama screen di navigator kamu
+  route: string;
 };
 
 const menuItems: MenuItem[] = [
@@ -32,7 +30,6 @@ export default function Navbar(): React.JSX.Element {
   async function handleLogout() {
     try {
       await logout();
-      // arahkan ke Login / Home (pilih salah satu)
       navigation.navigate("Home");
     } catch (err) {
       console.error("Failed to log out:", err);
@@ -41,12 +38,10 @@ export default function Navbar(): React.JSX.Element {
 
   return (
     <View style={styles.container}>
-      {/* Brand */}
       <Pressable onPress={() => navigation.navigate("Home")} style={styles.brandWrap}>
         <Text style={styles.brand}>AcidBase VLab</Text>
       </Pressable>
 
-      {/* Menu */}
       <View style={styles.menu}>
         {menuItems.map((item) => (
           <Pressable
@@ -59,16 +54,13 @@ export default function Navbar(): React.JSX.Element {
         ))}
       </View>
 
-      {/* Right side: user */}
       <View style={styles.right}>
         {currentUser ? (
           <View style={styles.userRow}>
             <Text style={styles.userText} numberOfLines={1}>
               {displayName}
             </Text>
-
             <Image source={DefaultAvatar} style={styles.avatar} />
-
             <Pressable onPress={handleLogout} style={styles.logoutBtn} hitSlop={10}>
               <LogOut size={18} color="#4B5563" />
             </Pressable>
@@ -118,9 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FAFB",
   },
   menuText: { fontSize: 12, fontWeight: "600", color: "#374151" },
-
   right: { minWidth: 120, alignItems: "flex-end" },
-
   userRow: { flexDirection: "row", alignItems: "center", gap: 10, maxWidth: 180 },
   userText: { fontSize: 12, fontWeight: "600", color: "#374151", maxWidth: 90 },
   avatar: { width: 32, height: 32, borderRadius: 16 },

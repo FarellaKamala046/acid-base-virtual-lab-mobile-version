@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 
-/** ---------- Types ---------- */
 type ZoneId = "strong_acid" | "weak_acid" | "strong_base" | "weak_base";
 type ItemId =
   | "item1"
@@ -27,7 +26,7 @@ type Item = {
 type Zone = {
   id: ZoneId;
   name: string;
-  color: string; // tailwind class
+  color: string;
 };
 
 type DroppedMap = Partial<Record<ItemId, ZoneId>>;
@@ -38,7 +37,6 @@ type QuizResult = {
   total: number;
 } | null;
 
-/** ---------- Data ---------- */
 const ITEMS: Item[] = [
   { id: "item1", name: "HCl", type: "strong_acid" },
   { id: "item2", name: "NaOH", type: "strong_base" },
@@ -57,7 +55,6 @@ const ZONES: Zone[] = [
   { id: "weak_base", name: "Basa Lemah", color: "bg-purple-50 border-purple-300" },
 ];
 
-/** ---------- Child Components ---------- */
 type SubstanceCardProps = {
   item: Item;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, itemId: ItemId) => void;
@@ -112,7 +109,6 @@ function CategoryDropZone({
   );
 }
 
-/** ---------- Main ---------- */
 export default function LatihanBab3Sortir(): React.ReactElement {
   const { currentUser, userScores } = useAuth();
 
@@ -162,7 +158,6 @@ export default function LatihanBab3Sortir(): React.ReactElement {
   const v = scores?.[key];
   return typeof v === "number" && Number.isFinite(v) ? v : 0;
 };
-
         await setDoc(
           userRef,
           {

@@ -8,7 +8,6 @@ export default function Bab4() {
         Selamat datang di Bab 4! Kita akan mempelajari reaksi paling fundamental antara asam dan basa, yaitu reaksi netralisasi. Konsep ini adalah dasar dari teknik penting di laboratorium kimia yaitu proses titrasi.
       </Text>
 
-      {/* 1. Reaksi Netralisasi */}
       <Text style={styles.h2}>1. Reaksi Netralisasi: Asam + Basa → Garam + Air</Text>
       <Text style={styles.p}>
         Ketika asam dan basa dicampur, ion H⁺ dari asam bereaksi dengan ion OH⁻ dari basa membentuk H₂O (netral). Ion sisanya membentuk garam.
@@ -56,7 +55,6 @@ export default function Bab4() {
         (M=Molaritas, V=Volume, a=valensi asam, b=valensi basa)
       </Text>
 
-      {/* Spacer bawah untuk navigasi */}
       <View style={{ height: 40 }} />
     </ScrollView>
   );

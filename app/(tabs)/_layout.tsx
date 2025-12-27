@@ -11,7 +11,6 @@ export default function TabLayout() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // 1. Pantau status login dari Firebase
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
     });
@@ -20,10 +19,8 @@ export default function TabLayout() {
     const subSegment = segments[1];
     const inTabsGroup = rootSegment === '(tabs)';
     
-    // Pakai 'as string' biar TypeScript nggak protes lagi
     const isAtHome = !subSegment || (subSegment as string) === 'index';
 
-    // 2. Logic Satpam: Tendang ke Login kalau akses fitur tapi belum login
     if (!isLoggedIn && inTabsGroup && !isAtHome) {
       router.replace('/Login' as any);
     }
@@ -53,7 +50,6 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* 1. HOME - Menggunakan file index.tsx */}
       <Tabs.Screen 
         name="index" 
         options={{ 
@@ -62,7 +58,6 @@ export default function TabLayout() {
         }} 
       />
 
-      {/* 2. COURSE / MATERI */}
       <Tabs.Screen 
         name="Course" 
         options={{ 
@@ -71,7 +66,6 @@ export default function TabLayout() {
         }} 
       />
 
-      {/* 3. VIRTUAL LAB */}
       <Tabs.Screen 
         name="VirtualLab" 
         options={{ 
@@ -80,7 +74,6 @@ export default function TabLayout() {
         }} 
       />
 
-      {/* 4. QUIZ */}
       <Tabs.Screen 
         name="Quiz" 
         options={{ 

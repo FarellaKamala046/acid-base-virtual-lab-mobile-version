@@ -1,20 +1,18 @@
-import React, { useCallback, useRef, useState } from "react";
-import { View, Text, StyleSheet, Dimensions, Alert, Pressable } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, runOnJS } from "react-native-reanimated";
-// import { Picker } from "@react-native-picker/picker";
-import type { View as RNView } from "react-native";
-import { useAuth } from "../context/AuthContext"; // Sesuaikan path-nya ya Ken!
-import { db } from "../firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { RefreshCcw } from "lucide-react-native";
+import React, { useCallback, useRef, useState } from "react";
+import type { View as RNView } from "react-native";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { useAuth } from "../context/AuthContext";
+import { db } from "../firebaseConfig";
 
 const { width } = Dimensions.get("window");
 const BEAKER_SIZE = Math.min(90, width / 3.9);
 
 type BeakerKey = "A" | "B" | "C";
 type LitmusColor = "Merah" | "Biru";
-
 type Rect = { x: number; y: number; w: number; h: number };
 
 function inside(r: Rect | null, x: number, y: number) {
@@ -23,9 +21,6 @@ function inside(r: Rect | null, x: number, y: number) {
 }
 
 function labelFor(target: BeakerKey, color: LitmusColor) {
-  // A = asam: merah tetap merah, biru jadi merah
-  // B = basa: merah jadi biru, biru tetap biru
-  // C = netral: merah tetap merah, biru tetap biru
   if (target === "A") return color === "Merah" ? "M→M" : "B→M";
   if (target === "B") return color === "Merah" ? "M→B" : "B→B";
   return color === "Merah" ? "M→M" : "B→B";
@@ -56,8 +51,6 @@ function DraggableLakmus({
     })
     .onEnd((e) => {
       runOnJS(onDrop)(e.absoluteX, e.absoluteY, color);
-
-      // balik halus TANPA bounce
       tx.value = withTiming(0, { duration: 160 });
       ty.value = withTiming(0, { duration: 160 });
       z.value = 1;
@@ -85,7 +78,6 @@ function KesimpulanDropdown({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-
   const options = ["Asam", "Basa", "Netral"];
 
   return (
@@ -130,7 +122,6 @@ export default function LatihanBab1() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
 
-  // refs untuk measureInWindow (ini kunci biar drop-nya akurat)
   const refA = useRef<RNView | null>(null);
   const refB = useRef<RNView | null>(null);
   const refC = useRef<RNView | null>(null);
@@ -147,7 +138,6 @@ export default function LatihanBab1() {
   const rectRef = useRef<Record<BeakerKey, Rect | null>>({ A: null, B: null, C: null });
 
   const measureBeakers = useCallback(() => {
-    // ✅ helper menerima nullable
     const measureOne = (key: BeakerKey, r: React.RefObject<RNView | null>) => {
       r.current?.measureInWindow((x, y, w, h) => {
         rectRef.current[key] = { x, y, w, h };
@@ -163,14 +153,12 @@ export default function LatihanBab1() {
     const kunci = { A: "Asam", B: "Basa", C: "Netral" };
     let benar = 0;
 
-    // Hitung skor berdasarkan dropdown yang dipilih Ken
     if (conclusions.A === kunci.A) benar++;
     if (conclusions.B === kunci.B) benar++;
     if (conclusions.C === kunci.C) benar++;
 
     const finalScore = Math.round((benar / 3) * 100);
 
-    // LOGIKA SIMPAN KE FIREBASE (Mirip Bab 2) ✨
     if (currentUser?.uid) {
       try {
         const userRef = doc(db, "user_scores", currentUser.uid);
@@ -187,7 +175,6 @@ export default function LatihanBab1() {
       }
     }
 
-    // Set status untuk munculin kotak hasil
     setQuizResult({
       score: finalScore,
       correctAssociations: benar,
@@ -198,7 +185,6 @@ export default function LatihanBab1() {
 
   const onDrop = useCallback(
     (absX: number, absY: number, color: LitmusColor) => {
-      // pastikan rect terbaru
       measureBeakers();
 
       const r = rectRef.current;
@@ -223,7 +209,6 @@ export default function LatihanBab1() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container} onLayout={measureBeakers}>
       
-        {/* BAR LAKMUS (di atas beaker) */}
         <View style={styles.lakmusBar}>
           <Text style={styles.lakmusBarLabel}>Lakmus:</Text>
           
@@ -258,7 +243,6 @@ export default function LatihanBab1() {
               />
             </View>
 
-            {/* <Text style={styles.subText}>Larutan A</Text> */}
           </View>
 
           {/* B */}
@@ -274,7 +258,6 @@ export default function LatihanBab1() {
               </View>
             </View>
             <View style={styles.pickerWrap}>
-              {/* <Text style={styles.pickerTitle}>Kesimpulan</Text> */}
 
               <KesimpulanDropdown
                 value={conclusions.B}
@@ -284,7 +267,6 @@ export default function LatihanBab1() {
               />
             </View>
 
-            {/* <Text style={styles.subText}>Larutan B</Text> */}
           </View>
 
           {/* C */}
@@ -301,7 +283,6 @@ export default function LatihanBab1() {
             </View>
 
             <View style={styles.pickerWrap}>
-              {/* <Text style={styles.pickerTitle}>Kesimpulan</Text> */}
 
               <KesimpulanDropdown
                 value={conclusions.C}
@@ -310,47 +291,9 @@ export default function LatihanBab1() {
                 }
               />
             </View>
-
-            {/* <Text style={styles.subText}>Larutan C</Text> */}
           </View>
         </View>
 
-        {/* <View style={styles.dragZone}>
-          <Text style={styles.hint}>Tarik kertas lakmus ke arah gelas:</Text>
-          <View style={styles.lakmusGroup}>
-            <DraggableLakmus color="Biru" onDrop={onDrop} />
-            <DraggableLakmus color="Merah" onDrop={onDrop} />
-          </View>
-        </View> */}
-
-        {/* <Pressable
-          style={styles.btnCek}
-          onPress={() => Alert.alert("Tersimpan!", "Jawaban kamu sudah dicatat Ken!")}
-        >
-          <Text style={styles.btnText}>Simpan Hasil</Text>
-        </Pressable> */}
-
-        {/* BUTTON ROW */}
-        {/* <View style={styles.actionRow}>
-          <Pressable
-            style={styles.btnPrimary}
-            onPress={() => Alert.alert("Cek Kesimpulan", "Nanti di sini kamu bisa validasi jawaban 😊")}
-          >
-            <Text style={styles.btnPrimaryText}>Cek Kesimpulan</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.btnSecondary}
-            onPress={() => {
-              setTestResults({ A: [], B: [], C: [] });
-              setConclusions({ A: "", B: "", C: "" });
-            }}
-          >
-            <Text style={styles.btnSecondaryText}>Ulangi Simulasi</Text>
-          </Pressable>
-        </View> */}
-
-        {/* RESULT BLOCK ✨ */}
         <View style={styles.resultBlock}>
           {quizResult && (
             <View style={[styles.resultBox, quizResult.score === 100 ? styles.resultGreen : styles.resultBlue]}>
@@ -408,11 +351,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   beakerLabel: { position: "absolute", top: 8, fontWeight: "900", color: "#6b7280" },
-
   resultContainer: { alignItems: "center", gap: 6 },
   miniLakmus: { width: 54, height: 22, borderRadius: 6, justifyContent: "center", alignItems: "center" },
   miniText: { color: "#fff", fontSize: 11, fontWeight: "900" },
-
   pickerWrap: { width: "100%", marginTop: 10 },
   pickerTitle: { fontSize: 11, fontWeight: "800", color: "#374151", marginBottom: 6, alignSelf: "flex-start" },
   pickerBorder: {
@@ -424,12 +365,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   picker: { width: "100%", height: 44 },
-
   subText: { marginTop: 6, fontSize: 13, fontWeight: "900", color: "#111827" },
-
   dragZone: { marginTop: 18, alignItems: "center", width: "100%" },
   hint: { fontSize: 13, color: "#6b7280", marginBottom: 14 },
-
   lakmusGroup: { flexDirection: "row", gap: 30 },
   lakmus: { width: 90, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center", elevation: 10 },
   red: { backgroundColor: "#ef4444" },
@@ -493,7 +431,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111827",
   },
-  // ===== LAKMUS BAR (WEB-LIKE) =====
   lakmusBar: {
     width: "100%",
     backgroundColor: "#FEFCE8",
@@ -504,10 +441,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: 'flex-end', // Biar lakmusnya geser ke kanan
+    justifyContent: 'flex-end', 
     gap: 17,
     marginBottom: 14,
-    zIndex: 10, // Biar pas di-drag lakmusnya ada di depan gelas
+    zIndex: 10,
   },
   lakmusBarLabel: {
     fontSize: 13,
@@ -536,7 +473,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  // ===== BUTTON ROW (WEB-LIKE) =====
   actionRow: {
     marginTop: 16,
     width: "100%",

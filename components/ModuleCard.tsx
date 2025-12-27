@@ -1,17 +1,11 @@
 import React from "react";
-import {
-  View,
-  Text,
-  Image,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { CheckCircle, Award, Clock } from "lucide-react-native";
 
 type Topic = {
   title: string;
   description: string;
-  image: string; // URL image
+  image: string; 
   score: number;
 };
 
@@ -37,28 +31,21 @@ export default function ModuleCard({
         isActive ? styles.cardActive : styles.cardInactive,
       ]}
     >
-      {/* Kiri: Gambar */}
       <Image
         source={{ uri: image }}
         style={styles.image}
         resizeMode="cover"
       />
-
-      {/* Kanan: Konten */}
       <View style={styles.content}>
-        {/* Judul */}
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
 
-        {/* Deskripsi */}
         <Text style={styles.description} numberOfLines={2}>
           {description}
         </Text>
 
-        {/* Footer */}
         <View style={styles.footer}>
-          {/* Skor */}
           <View style={styles.row}>
             <Award size={14} color="#3B82F6" />
             <Text style={styles.footerText}>
@@ -66,7 +53,6 @@ export default function ModuleCard({
             </Text>
           </View>
 
-          {/* Status */}
           {isModuleFinished ? (
             <View style={styles.row}>
               <CheckCircle size={14} color="#16A34A" />

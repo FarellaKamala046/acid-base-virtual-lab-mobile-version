@@ -21,7 +21,7 @@ type TheoryZone = {
 
 type QuizResult = {
   score: number;
-  correctAssociations: number; // raw score (bisa desimal karena penalti)
+  correctAssociations: number;
   maxAssociations: number;
 };
 
@@ -44,7 +44,6 @@ export default function LatihanBab2() {
 
   const [reactions] = useState<Reaction[]>(initialReactions);
 
-  // Format: { r1: ['arrhenius','lewis'], r2: ['lewis'], ... }
   const [droppedInZones, setDroppedInZones] = useState<Record<string, TheoryId[]>>({});
   const [selectedReactionId, setSelectedReactionId] = useState<string | null>(null);
 
@@ -66,7 +65,7 @@ export default function LatihanBab2() {
 
     setDroppedInZones((prev) => {
       const cur = prev[selectedReactionId] ?? [];
-      if (cur.includes(zoneId)) return prev; // avoid duplicate
+      if (cur.includes(zoneId)) return prev;
       return { ...prev, [selectedReactionId]: [...cur, zoneId] };
     });
   };
@@ -139,12 +138,6 @@ export default function LatihanBab2() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* <Text style={styles.h2}>Latihan Klasifikasi Teori Asam Basa</Text>
-      <Text style={styles.p}>
-        Tugasmu: pilih reaksi → lalu tap kotak teori untuk menempatkannya. (Mobile-friendly version)
-      </Text> */}
-
-      {/* ZONES */}
       <View style={styles.zonesGrid}>
         {theoryZones.map((zone) => {
           const items = getItemsInZone(zone.id);
@@ -190,7 +183,6 @@ export default function LatihanBab2() {
         })}
       </View>
 
-      {/* REACTIONS LIST */}
       <View style={styles.bank}>
         <Text style={styles.bankTitle}>Reaksi Kimia (tap untuk pilih):</Text>
 
@@ -211,7 +203,6 @@ export default function LatihanBab2() {
         </View>
       </View>
 
-      {/* RESULT */}
       <View style={styles.resultBlock}>
         {quizResult && (
           <View
@@ -382,7 +373,6 @@ const styles = StyleSheet.create({
   resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
   resultScore: { fontSize: 22, fontWeight: "900", color: "#1D4ED8" },
   resultMeta: { color: "#4B5563" },
-
   actions: { flexDirection: "row", gap: 10, alignItems: "center" },
   primaryBtn: {
     flex: 1,

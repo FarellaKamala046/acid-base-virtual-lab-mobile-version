@@ -11,7 +11,6 @@ export default function Bab2() {
         Kita akan pelajari tiga teori utama, dari yang paling awal sampai yang paling modern: Arrhenius, Brønsted-Lowry, dan Lewis.
       </Text>
 
-      {/* 1. Teori Asam Basa Arrhenius */}
       <Text style={styles.h2}>1. Teori Asam Basa Arrhenius</Text>
       <Text style={styles.p}>
         Svante Arrhenius (1884) mendefinisikan asam dan basa berdasarkan perilakunya saat dilarutkan dalam air (aq).
@@ -45,7 +44,6 @@ export default function Bab2() {
         Keterbatasan: Hanya berlaku dalam air dan tidak bisa menjelaskan basa seperti NH₃.
       </Text>
 
-      {/* 2. Teori Asam Basa Brønsted-Lowry */}
       <Text style={styles.h2}>2. Teori Asam Basa Brønsted-Lowry</Text>
       <Text style={styles.p}>
         Brønsted dan Lowry (1923) fokus pada transfer proton (ion H⁺).
@@ -78,7 +76,6 @@ export default function Bab2() {
         Kelebihan: Lebih luas, bisa menjelaskan basa NH₃, memperkenalkan konsep konjugasi.
       </Text>
 
-      {/* 3. Teori Asam Basa Lewis */}
       <Text style={styles.h2}>3. Teori Asam Basa Lewis</Text>
       <Text style={styles.p}>
         Gilbert N. Lewis (1923) punya definisi paling luas, fokus pada pasangan elektron bebas (PEB).
@@ -99,7 +96,6 @@ export default function Bab2() {
         Kelebihan: Paling umum, mencakup semua teori lain, bisa menjelaskan reaksi tanpa proton.
       </Text>
 
-      {/* Padding bawah agar tidak terpotong navbar */}
       <View style={{ height: 40 }} />
     </ScrollView>
   );

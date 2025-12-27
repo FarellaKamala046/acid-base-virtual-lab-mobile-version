@@ -1,16 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Animated,
-  TextInput,
-  SafeAreaView,
-  Easing,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated, TextInput, SafeAreaView, Easing, } from "react-native";
 
 const ANIMATION_DURATION = 1100;
 
@@ -32,9 +21,8 @@ const phColors = [
   "#9400d3",
 ];
 
-// Visual scaling only (untuk tinggi cairan)
-const MAX_VISUAL_TUBE_ML = 100; // "penuh" tabung reaksi secara visual
-const MIN_VISUAL_BEAKER_CAPACITY_ML = 200; // minimal kapasitas visual beaker
+const MAX_VISUAL_TUBE_ML = 100;
+const MIN_VISUAL_BEAKER_CAPACITY_ML = 200;
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
@@ -44,13 +32,11 @@ function phToColor(pH: number) {
 }
 
 export default function VirtualLab() {
-  // Input (string biar TextInput enak)
   const [hclConcentration, setHclConcentration] = useState("0.1");
   const [hclVolume, setHclVolume] = useState("50");
   const [naohConcentration, setNaohConcentration] = useState("0.1");
   const [naohVolume, setNaohVolume] = useState("50");
 
-  // Output
   const [totalVolume, setTotalVolume] = useState("?");
   const [molHPlus, setMolHPlus] = useState("?");
   const [molOHMinus, setMolOHMinus] = useState("?");
@@ -59,23 +45,14 @@ export default function VirtualLab() {
   const [simulationStatus, setSimulationStatus] = useState("Siap untuk simulasi");
   const [isSimulating, setIsSimulating] = useState(false);
 
-  // ✅ NEW: simpan nilai pH buat ditampilkan di "Hasil & Analisis"
   const [finalPh, setFinalPh] = useState("?");
-
-  // --- Animated values ---
   const acidPour = useRef(new Animated.Value(0)).current; // 0 -> 1 (transform tabung)
   const basePour = useRef(new Animated.Value(0)).current;
-
-  // fill tabung (0..1)
   const tubeAcidFill = useRef(new Animated.Value(1)).current;
   const tubeBaseFill = useRef(new Animated.Value(1)).current;
-
-  // fill beaker (0..1)
   const beakerFill = useRef(new Animated.Value(0)).current;
-
   const [beakerLiquidColor, setBeakerLiquidColor] = useState("#add8e6");
   const [beakerLiquidLevelText, setBeakerLiquidLevelText] = useState("0 mL");
-
   const tubeAcidColor = "#ff9999";
   const tubeBaseColor = "#99ccff";
 
@@ -93,8 +70,6 @@ export default function VirtualLab() {
     };
   }, [hclVolume, naohVolume, hclConcentration, naohConcentration]);
 
-  // Biar gak pake (beakerFill as any)._value yang kadang bikin loncat,
-  // kita track manual fraksi beaker sekarang
   const currentBeakerFracRef = useRef(0);
 
   const setInitialVisualFills = (vHcl: number, vNaoh: number) => {
@@ -114,11 +89,6 @@ export default function VirtualLab() {
     setBeakerLiquidLevelText("0 mL");
   };
 
-  /**
-   * Tuang yang "smooth":
-   * - tabung dari (startFrac) turun ke (endFrac)
-   * - beaker naik sesuai volume (visualnya di-scale), tapi label mL asli
-   */
   const runPourAnimation = async (
     which: "acid" | "base",
     mlToPour: number,
@@ -127,26 +97,20 @@ export default function VirtualLab() {
   ) => {
     const pour = which === "acid" ? acidPour : basePour;
     const tubeFill = which === "acid" ? tubeAcidFill : tubeBaseFill;
-
-    // sebelum tuang, tabung harus "penuh sesuai input" (startFrac)
-    // setelah tuang, tabung harus 0
     const startFrac = clamp(mlToPour / MAX_VISUAL_TUBE_ML, 0, 1);
     tubeFill.setValue(startFrac);
 
-    // target beaker frac (kumulatif)
     const addFrac = clamp(mlToPour / beakerCapacityMl, 0, 1);
     const nextBeaker = clamp(currentBeakerFracRef.current + addFrac, 0, 1);
 
     return new Promise<void>((resolve) => {
       Animated.parallel([
-        // miringkan tabung
         Animated.timing(pour, {
           toValue: 1,
           duration: ANIMATION_DURATION,
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: true,
         }),
-        // kurangi isi tabung dari startFrac -> 0 (smooth)
         Animated.timing(tubeFill, {
           toValue: 0,
           duration: ANIMATION_DURATION,
@@ -161,17 +125,14 @@ export default function VirtualLab() {
           useNativeDriver: false,
         }),
       ]).start(() => {
-        // simpan fraksi beaker terbaru (biar gak loncat)
         currentBeakerFracRef.current = nextBeaker;
 
-        // balikin tabung ke posisi normal
         Animated.timing(pour, {
           toValue: 0,
           duration: 350,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }).start(() => {
-          // IMPORTANT: label mL jangan di-clamp, pakai angka asli
           setBeakerLiquidLevelText(`${shownMlLabel.toFixed(0)} mL`);
           resolve();
         });
@@ -179,21 +140,18 @@ export default function VirtualLab() {
     });
   };
 
-  // ✅ NEW: setelah selesai tuang, beaker "turun kosong" + tabung terisi lagi
   const autoResetVisuals = async (vHcl: number, vNaoh: number) => {
     const acidFrac = clamp(vHcl / MAX_VISUAL_TUBE_ML, 0, 1);
     const baseFrac = clamp(vNaoh / MAX_VISUAL_TUBE_ML, 0, 1);
 
     return new Promise<void>((resolve) => {
       Animated.parallel([
-        // beaker turun jadi 0 (smooth)
         Animated.timing(beakerFill, {
           toValue: 0,
           duration: 650,
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: false,
         }),
-        // tabung balik "keisi lagi"
         Animated.timing(tubeAcidFill, {
           toValue: acidFrac,
           duration: 650,
@@ -244,18 +202,14 @@ export default function VirtualLab() {
 
     const totalMl = vHcl + vNaoh;
 
-    // Kapasitas visual beaker: minimal 200, tapi kalau total > 200, scale naik
-    // Jadi volume besar tetap "full" secara visual, label tetap bener.
     const beakerCapacityMl = Math.max(totalMl, MIN_VISUAL_BEAKER_CAPACITY_ML);
 
-    // pour acid
     if (vHcl > 0) {
       setSimulationStatus("Menuang HCl...");
       setBeakerLiquidColor(tubeAcidColor);
       await runPourAnimation("acid", vHcl, beakerCapacityMl, vHcl);
     }
 
-    // pour base
     if (vNaoh > 0) {
       setSimulationStatus("Menuang NaOH...");
       setBeakerLiquidColor(tubeBaseColor);
@@ -264,7 +218,6 @@ export default function VirtualLab() {
 
     setSimulationStatus("Menghitung hasil...");
 
-    // --- Chemistry logic (sama kaya web) ---
     const mol_hcl = mHcl * (vHcl / 1000);
     const mol_naoh = mNaoh * (vNaoh / 1000);
     const total_L = totalMl / 1000;
@@ -297,16 +250,13 @@ export default function VirtualLab() {
     setFinalState(state);
     setIndicatorColor(phToColor(ph));
 
-    // ✅ NEW: simpan pH untuk ditampilkan
     setFinalPh(ph.toFixed(2));
 
-    // label mL tetap total asli (sebentar), lalu visual reset akan bikin 0 mL
     setBeakerLiquidLevelText(`${totalMl.toFixed(0)} mL`);
 
     setSimulationStatus("Simulasi selesai");
     setIsSimulating(false);
 
-    // ✅ NEW: habis kelar tuang + hitung, beaker kosong turun + tabung keisi lagi
     await autoResetVisuals(vHcl, vNaoh);
   };
 
@@ -324,8 +274,6 @@ export default function VirtualLab() {
     setFinalState("?");
     setIndicatorColor("#ccc");
     setSimulationStatus("Siap untuk simulasi");
-
-    // ✅ NEW: reset pH juga
     setFinalPh("?");
 
     acidPour.setValue(0);
@@ -340,7 +288,6 @@ export default function VirtualLab() {
     setBeakerLiquidLevelText("0 mL");
   };
 
-  // transforms: miring + geser ke beaker
   const acidTransform = {
     transform: [
       {
@@ -387,7 +334,6 @@ export default function VirtualLab() {
     ],
   };
 
-  // Heights (tabung & beaker) via interpolation
   const tubeLiquidHeight = (fill: Animated.Value) =>
     fill.interpolate({
       inputRange: [0, 1],
@@ -397,14 +343,13 @@ export default function VirtualLab() {
 
   const beakerLiquidHeight = beakerFill.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 240], // tinggi dalam area isi beaker (inner)
+    outputRange: [0, 240],
     extrapolate: "clamp",
   });
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
-        {/* Card Input */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Input Larutan</Text>
 
@@ -457,11 +402,9 @@ export default function VirtualLab() {
           </TouchableOpacity>
         </View>
 
-        {/* Card Simulasi */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Simulasi Pencampuran</Text>
 
-          {/* Tubes */}
           <View style={styles.tubesRow}>
             <View style={styles.tubeCol}>
               <Animated.View style={[styles.tubeWrap, acidTransform]}>
@@ -492,7 +435,6 @@ export default function VirtualLab() {
             </View>
           </View>
 
-          {/* Beaker (Outer border + Inner clip) */}
           <View style={styles.beakerOuter}>
             <View style={styles.beakerInner}>
               <Animated.View
@@ -508,11 +450,9 @@ export default function VirtualLab() {
           <Text style={styles.statusText}>{simulationStatus}</Text>
         </View>
 
-        {/* Card Hasil */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Hasil & Analisis</Text>
 
-          {/* ✅ NEW: tampilkan pH */}
           <View style={styles.resultRow}>
             <Text style={styles.bold}>pH Akhir:</Text>
             <Text> {finalPh}</Text>
@@ -538,13 +478,11 @@ export default function VirtualLab() {
             <Text> {finalState}</Text>
           </View>
 
-          {/* ✅ REVISED: indikator jadi panjang (seperti gambar) */}
           <View style={{ marginTop: 12 }}>
             <Text style={styles.bold}>Warna Indikator Universal:</Text>
             <View style={[styles.colorBox, { backgroundColor: indicatorColor }]} />
           </View>
 
-          {/* ✅ NEW: Penjelasan Konsep (persis isi gambar) */}
           <View style={{ marginTop: 18 }}>
             <Text style={styles.cardTitle}>Penjelasan Konsep:</Text>
 
@@ -565,7 +503,6 @@ export default function VirtualLab() {
               <Text style={styles.subLine}>pH = 14 − pOH</Text>
             </View>
 
-            {/* ✅ REVISED: Larutan Netral jadi bullet + bagian bawahnya rata */}
             <View style={[styles.bulletRow, { marginTop: 8 }]}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={styles.bulletText}>
@@ -682,8 +619,8 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15, color: "#1f2937" },
-
   inputLabel: { fontSize: 14, fontWeight: "600", color: "#4b5563", marginBottom: 5 },
+  
   input: {
     borderWidth: 1,
     borderColor: "#d1d5db",
@@ -703,9 +640,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+
   buttonSecondaryText: { color: "#374151", fontWeight: "700", fontSize: 16 },
 
-  // Tubes layout
   tubesRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -715,14 +652,12 @@ const styles = StyleSheet.create({
   tubeCol: { alignItems: "center", width: 120 },
   tubeWrap: { width: 90, height: 180, alignItems: "center", justifyContent: "flex-end" },
   tubeLabel: { marginTop: 10, fontWeight: "800", fontSize: 18, color: "#111827" },
-
-  // Test tube shape: atas bolong rata, bawah bulat
   tubeGlass: {
     width: 70,
     height: 170,
     borderWidth: 3,
     borderColor: GLASS_SOFT,
-    borderTopWidth: 0, // atas bolong
+    borderTopWidth: 0,
     borderBottomLeftRadius: 34,
     borderBottomRightRadius: 34,
     borderTopLeftRadius: 0,
@@ -734,8 +669,6 @@ const styles = StyleSheet.create({
   tubeLiquid: {
     width: "100%",
   },
-
-  // ✅ UPDATED: Beaker lebih kecil (bentuk tetap sama)
   beakerOuter: {
     alignSelf: "center",
     width: 190,
@@ -760,8 +693,6 @@ const styles = StyleSheet.create({
   beakerLiquid: {
     width: "100%",
   },
-
-  // ✅ UPDATED: Angka lebih kecil (tampilan tetap di tengah bawah)
   beakerLevel: {
     position: "absolute",
     bottom: 10,
@@ -773,11 +704,9 @@ const styles = StyleSheet.create({
   },
 
   statusText: { textAlign: "center", marginTop: 15, color: "#6b7280", fontStyle: "italic", fontSize: 18 },
-
   resultRow: { flexDirection: "row", marginBottom: 8 },
   bold: { fontWeight: "700", color: "#374151" },
 
-  // ✅ REVISED: bikin box indikator full lebar
   colorBox: {
     width: "100%",
     height: 60,
@@ -787,14 +716,12 @@ const styles = StyleSheet.create({
     borderColor: "#d1d5db",
   },
 
-  // ✅ NEW styles for konsep section
   sectionTitle: { fontSize: 18, fontWeight: "800", color: "#111827", marginBottom: 8 },
   bulletRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 6 },
   bulletDot: { width: 18, fontSize: 16, lineHeight: 22, color: "#111827" },
   bulletText: { flex: 1, fontSize: 15, lineHeight: 22, color: "#111827" },
   boldInline: { fontWeight: "800", color: "#111827" },
   subLine: { fontSize: 15, lineHeight: 22, color: "#111827", marginTop: 2 },
-
   numberRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 10 },
   num: { width: 22, fontSize: 15, lineHeight: 22, fontWeight: "700", color: "#111827" },
   numberText: { flex: 1, fontSize: 15, lineHeight: 22, color: "#111827" },
