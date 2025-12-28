@@ -1,9 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, StatusBar, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+} from "react-native";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useAuth } from "../../context/AuthContext";
-import { Award, CheckCircle2, ChevronLeft, Timer } from "lucide-react-native";
+import { Award, ChevronLeft, Timer } from "lucide-react-native";
 
 const QuestionBank = {
   1: [
@@ -25,7 +35,7 @@ const QuestionBank = {
     { id: "bab4q1", q: "Reaksi netralisasi menghasilkan produk utama...", options: ["a. Garam dan air", "b. CO₂", "c. H₂", "d. NH₃"], answerIndex: 0 },
     { id: "bab4q2", q: "HCl(aq) + NaOH(aq) → ...", options: ["a. NaCl(aq) + H₂(g)", "b. NaCl(aq) + H₂O(l)", "c. NaCl(s) + H₂O(l)", "d. H₂O(l) saja"], answerIndex: 1 },
     { id: "bab4q3", q: "Netralisasi terjadi antara...", options: ["a. Asam dan garam", "b. Basa dan garam", "c. Asam dan basa", "d. Garam dan air"], answerIndex: 2 },
-  ]
+  ],
 };
 
 export default function QuizScreen() {
@@ -57,6 +67,35 @@ export default function QuizScreen() {
     }
   }, [timeLeft, isRunning]);
 
+  const resetAndExit = () => {
+    clearInterval(timerRef.current);
+    setIsRunning(false);
+    setIsSubmitted(false);
+    setFinalScore(0);
+    setTimeLeft(600);
+    setAnswers({});
+    setActiveChapter(null);
+  };
+
+  const confirmExit = () => {
+    if (isSubmitted) {
+      resetAndExit();
+      return;
+    }
+
+    const msg = "Progres kuis Anda akan hilang.";
+    if (Platform.OS === "web") {
+      const ok = (globalThis as any)?.confirm ? (globalThis as any).confirm(`Keluar Kuis?\n${msg}`) : true;
+      if (ok) resetAndExit();
+      return;
+    }
+
+    Alert.alert("Keluar Kuis?", msg, [
+      { text: "Batal", style: "cancel" },
+      { text: "Keluar", onPress: resetAndExit },
+    ]);
+  };
+
   const handleFinish = async () => {
     let correct = 0;
     questions.forEach((q: any) => {
@@ -83,7 +122,7 @@ export default function QuizScreen() {
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
   if (activeChapter === null) {
@@ -97,11 +136,11 @@ export default function QuizScreen() {
                 <Text style={styles.chapterTitle}>Bab {id}</Text>
                 <Text style={styles.chapterSubtitle}>3 Pertanyaan • 10 Menit</Text>
               </View>
-              <TouchableOpacity 
-                style={styles.startButton} 
+              <TouchableOpacity
+                style={styles.startButton}
                 onPress={() => {
-                  setActiveChapter(id); 
-                  setIsRunning(true); 
+                  setActiveChapter(id);
+                  setIsRunning(true);
                   setTimeLeft(600);
                   setAnswers({});
                   setIsSubmitted(false);
@@ -119,43 +158,38 @@ export default function QuizScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => {
-          if(!isSubmitted) {
-            Alert.alert("Keluar Kuis?", "Progres kuis Anda akan hilang.", [
-              { text: "Batal", style: "cancel" },
-              { text: "Keluar", onPress: () => setActiveChapter(null) }
-            ]);
-          } else {
-            setActiveChapter(null);
-          }
-        }}>
+        <TouchableOpacity style={styles.backBtn} onPress={confirmExit}>
           <ChevronLeft color="#2563eb" size={24} />
           <Text style={styles.backText}>Keluar</Text>
         </TouchableOpacity>
+
         <View style={styles.timerRow}>
           <Timer size={18} color={timeLeft < 60 ? "#ef4444" : "#4b5563"} />
-          <Text style={[styles.timerText, timeLeft < 60 && {color: '#ef4444'}]}>
-             {formatTime(timeLeft)}
-          </Text>
+          <Text style={[styles.timerText, timeLeft < 60 && { color: "#ef4444" }]}>{formatTime(timeLeft)}</Text>
         </View>
       </View>
 
       <ScrollView style={styles.container}>
         {questions.map((q: any, idx: number) => (
-          <View key={q.id} style={[
-            styles.qCard, 
-            isSubmitted && (answers[q.id] === q.answerIndex ? styles.correctCard : styles.wrongCard)
-          ]}>
-            <Text style={styles.qText}>{idx + 1}. {q.q}</Text>
+          <View
+            key={q.id}
+            style={[
+              styles.qCard,
+              isSubmitted && (answers[q.id] === q.answerIndex ? styles.correctCard : styles.wrongCard),
+            ]}
+          >
+            <Text style={styles.qText}>
+              {idx + 1}. {q.q}
+            </Text>
             {q.options.map((opt: string, oi: number) => (
-              <TouchableOpacity 
-                key={oi} 
+              <TouchableOpacity
+                key={oi}
                 disabled={isSubmitted}
-                onPress={() => setAnswers({...answers, [q.id]: oi})}
+                onPress={() => setAnswers({ ...answers, [q.id]: oi })}
                 style={[
-                  styles.optButton, 
+                  styles.optButton,
                   answers[q.id] === oi && styles.selectedOpt,
-                  isSubmitted && q.answerIndex === oi && styles.correctOptBorder
+                  isSubmitted && q.answerIndex === oi && styles.correctOptBorder,
                 ]}
               >
                 <Text style={[styles.optText, answers[q.id] === oi && styles.selectedOptText]}>{opt}</Text>
@@ -165,8 +199,11 @@ export default function QuizScreen() {
         ))}
 
         {!isSubmitted ? (
-          <TouchableOpacity 
-            style={[styles.finishButton, Object.keys(answers).length < questions.length && {backgroundColor: '#9ca3af'}]} 
+          <TouchableOpacity
+            style={[
+              styles.finishButton,
+              Object.keys(answers).length < questions.length && { backgroundColor: "#9ca3af" },
+            ]}
             onPress={handleFinish}
             disabled={Object.keys(answers).length < questions.length}
           >
@@ -176,43 +213,98 @@ export default function QuizScreen() {
           <View style={styles.scoreBoard}>
             <Award size={32} color="#1e40af" />
             <Text style={styles.scoreText}>Skor Akhir: {finalScore} / 100</Text>
-            <TouchableOpacity style={styles.backMenuBtn} onPress={() => setActiveChapter(null)}>
+            <TouchableOpacity style={styles.backMenuBtn} onPress={resetAndExit}>
               <Text style={styles.backMenuText}>Kembali ke Daftar Quiz</Text>
             </TouchableOpacity>
           </View>
         )}
-        <View style={{height: 50}} />
+
+        <View style={{ height: 50 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f9fafb', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f9fafb",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
   container: { flex: 1, padding: 20 },
-  headerTitle: { fontSize: 24, fontWeight: '800', marginBottom: 20, color: '#111827' },
-  chapterCard: { backgroundColor: 'white', padding: 18, borderRadius: 16, marginBottom: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
-  chapterTitle: { fontSize: 18, fontWeight: '700', color: '#1f2937' },
-  chapterSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  startButton: { backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
-  buttonText: { color: 'white', fontWeight: 'bold' },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  backBtn: { flexDirection: 'row', alignItems: 'center' },
-  backText: { color: '#2563eb', fontWeight: 'bold', marginLeft: 4 },
-  timerRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
-  timerText: { fontWeight: '700', marginLeft: 6, color: '#4b5563' },
-  qCard: { backgroundColor: 'white', padding: 18, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#e5e7eb' },
-  correctCard: { backgroundColor: '#f0fdf4', borderColor: '#86efac' },
-  wrongCard: { backgroundColor: '#fef2f2', borderColor: '#fca5a5' },
-  qText: { fontSize: 16, fontWeight: '700', marginBottom: 15, color: '#1f2937' },
-  optButton: { padding: 14, borderRadius: 10, backgroundColor: '#f8fafc', marginBottom: 10, borderWidth: 1, borderColor: '#e2e8f0' },
-  optText: { color: '#475569', fontWeight: '500' },
-  selectedOpt: { backgroundColor: '#eff6ff', borderColor: '#3b82f6' },
-  selectedOptText: { color: '#1d4ed8', fontWeight: '700' },
-  correctOptBorder: { borderColor: '#22c55e', borderWidth: 2 },
-  finishButton: { backgroundColor: '#16a34a', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 40 },
-  scoreBoard: { backgroundColor: '#eff6ff', padding: 25, borderRadius: 20, alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#bfdbfe' },
-  scoreText: { fontSize: 22, fontWeight: '900', color: '#1e40af', marginVertical: 10 },
+  headerTitle: { fontSize: 24, fontWeight: "800", marginBottom: 20, color: "#111827" },
+  chapterCard: {
+    backgroundColor: "white",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  chapterTitle: { fontSize: 18, fontWeight: "700", color: "#1f2937" },
+  chapterSubtitle: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  startButton: { backgroundColor: "#2563eb", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
+  buttonText: { color: "white", fontWeight: "bold" },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  backBtn: { flexDirection: "row", alignItems: "center" },
+  backText: { color: "#2563eb", fontWeight: "bold", marginLeft: 4 },
+  timerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f3f4f6",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  timerText: { fontWeight: "700", marginLeft: 6, color: "#4b5563" },
+  qCard: {
+    backgroundColor: "white",
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  correctCard: { backgroundColor: "#f0fdf4", borderColor: "#86efac" },
+  wrongCard: { backgroundColor: "#fef2f2", borderColor: "#fca5a5" },
+  qText: { fontSize: 16, fontWeight: "700", marginBottom: 15, color: "#1f2937" },
+  optButton: {
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: "#f8fafc",
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  optText: { color: "#475569", fontWeight: "500" },
+  selectedOpt: { backgroundColor: "#eff6ff", borderColor: "#3b82f6" },
+  selectedOptText: { color: "#1d4ed8", fontWeight: "700" },
+  correctOptBorder: { borderColor: "#22c55e", borderWidth: 2 },
+  finishButton: { backgroundColor: "#16a34a", padding: 16, borderRadius: 12, alignItems: "center", marginBottom: 40 },
+  scoreBoard: {
+    backgroundColor: "#eff6ff",
+    padding: 25,
+    borderRadius: 20,
+    alignItems: "center",
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+  },
+  scoreText: { fontSize: 22, fontWeight: "900", color: "#1e40af", marginVertical: 10 },
   backMenuBtn: { marginTop: 15, padding: 10 },
-  backMenuText: { color: '#2563eb', fontWeight: '700', textDecorationLine: 'underline' }
+  backMenuText: { color: "#2563eb", fontWeight: "700", textDecorationLine: "underline" },
 });
