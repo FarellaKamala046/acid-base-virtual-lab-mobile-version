@@ -9,11 +9,17 @@ import {
   SafeAreaView,
   StatusBar,
   Platform,
+  Image,
 } from "react-native";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useAuth } from "../../context/AuthContext";
 import { Award, ChevronLeft, Timer } from "lucide-react-native";
+
+import ImgBab1 from "../../assets/images/pengenalan.jpg";
+import ImgBab2 from "../../assets/images/teori.jpg";
+import ImgBab3 from "../../assets/images/ph.jpg";
+import ImgBab4 from "../../assets/images/reaksi.jpg";
 
 const QuestionBank = {
   1: [
@@ -36,6 +42,13 @@ const QuestionBank = {
     { id: "bab4q2", q: "HCl(aq) + NaOH(aq) → ...", options: ["a. NaCl(aq) + H₂(g)", "b. NaCl(aq) + H₂O(l)", "c. NaCl(s) + H₂O(l)", "d. H₂O(l) saja"], answerIndex: 1 },
     { id: "bab4q3", q: "Netralisasi terjadi antara...", options: ["a. Asam dan garam", "b. Basa dan garam", "c. Asam dan basa", "d. Garam dan air"], answerIndex: 2 },
   ],
+};
+
+const ChapterImage: Record<number, any> = {
+  1: ImgBab1,
+  2: ImgBab2,
+  3: ImgBab3,
+  4: ImgBab4,
 };
 
 export default function QuizScreen() {
@@ -66,35 +79,6 @@ export default function QuizScreen() {
       handleFinish();
     }
   }, [timeLeft, isRunning]);
-
-  const resetAndExit = () => {
-    clearInterval(timerRef.current);
-    setIsRunning(false);
-    setIsSubmitted(false);
-    setFinalScore(0);
-    setTimeLeft(600);
-    setAnswers({});
-    setActiveChapter(null);
-  };
-
-  const confirmExit = () => {
-    if (isSubmitted) {
-      resetAndExit();
-      return;
-    }
-
-    const msg = "Progres kuis Anda akan hilang.";
-    if (Platform.OS === "web") {
-      const ok = (globalThis as any)?.confirm ? (globalThis as any).confirm(`Keluar Kuis?\n${msg}`) : true;
-      if (ok) resetAndExit();
-      return;
-    }
-
-    Alert.alert("Keluar Kuis?", msg, [
-      { text: "Batal", style: "cancel" },
-      { text: "Keluar", onPress: resetAndExit },
-    ]);
-  };
 
   const handleFinish = async () => {
     let correct = 0;
@@ -132,10 +116,14 @@ export default function QuizScreen() {
           <Text style={styles.headerTitle}>Daftar Quiz</Text>
           {[1, 2, 3, 4].map((id) => (
             <View key={id} style={styles.chapterCard}>
-              <View>
-                <Text style={styles.chapterTitle}>Bab {id}</Text>
-                <Text style={styles.chapterSubtitle}>3 Pertanyaan • 10 Menit</Text>
+              <View style={styles.chapterLeft}>
+                <Image source={ChapterImage[id]} style={styles.chapterImage} resizeMode="cover" />
+                <View style={styles.chapterTextWrap}>
+                  <Text style={styles.chapterTitle}>Bab {id}</Text>
+                  <Text style={styles.chapterSubtitle}>3 Pertanyaan • 10 Menit</Text>
+                </View>
               </View>
+
               <TouchableOpacity
                 style={styles.startButton}
                 onPress={() => {
@@ -158,7 +146,19 @@ export default function QuizScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.backBtn} onPress={confirmExit}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => {
+            if (!isSubmitted) {
+              Alert.alert("Keluar Kuis?", "Progres kuis Anda akan hilang.", [
+                { text: "Batal", style: "cancel" },
+                { text: "Keluar", onPress: () => setActiveChapter(null) },
+              ]);
+            } else {
+              setActiveChapter(null);
+            }
+          }}
+        >
           <ChevronLeft color="#2563eb" size={24} />
           <Text style={styles.backText}>Keluar</Text>
         </TouchableOpacity>
@@ -213,7 +213,7 @@ export default function QuizScreen() {
           <View style={styles.scoreBoard}>
             <Award size={32} color="#1e40af" />
             <Text style={styles.scoreText}>Skor Akhir: {finalScore} / 100</Text>
-            <TouchableOpacity style={styles.backMenuBtn} onPress={resetAndExit}>
+            <TouchableOpacity style={styles.backMenuBtn} onPress={() => setActiveChapter(null)}>
               <Text style={styles.backMenuText}>Kembali ke Daftar Quiz</Text>
             </TouchableOpacity>
           </View>
@@ -226,13 +226,10 @@ export default function QuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#f9fafb",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-  },
+  safeArea: { flex: 1, backgroundColor: "#f9fafb", paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0 },
   container: { flex: 1, padding: 20 },
   headerTitle: { fontSize: 24, fontWeight: "800", marginBottom: 20, color: "#111827" },
+
   chapterCard: {
     backgroundColor: "white",
     padding: 18,
@@ -246,10 +243,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  chapterLeft: { flexDirection: "row", alignItems: "center", flex: 1, paddingRight: 12 },
+  chapterImage: { width: 90, height: 60, borderRadius: 10, marginRight: 14, backgroundColor: "#f3f4f6" },
+  chapterTextWrap: { flexShrink: 1 },
   chapterTitle: { fontSize: 18, fontWeight: "700", color: "#1f2937" },
   chapterSubtitle: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+
   startButton: { backgroundColor: "#2563eb", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
   buttonText: { color: "white", fontWeight: "bold" },
+
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -262,48 +264,23 @@ const styles = StyleSheet.create({
   },
   backBtn: { flexDirection: "row", alignItems: "center" },
   backText: { color: "#2563eb", fontWeight: "bold", marginLeft: 4 },
-  timerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
+  timerRow: { flexDirection: "row", alignItems: "center", backgroundColor: "#f3f4f6", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
   timerText: { fontWeight: "700", marginLeft: 6, color: "#4b5563" },
-  qCard: {
-    backgroundColor: "white",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
+
+  qCard: { backgroundColor: "white", padding: 18, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: "#e5e7eb" },
   correctCard: { backgroundColor: "#f0fdf4", borderColor: "#86efac" },
   wrongCard: { backgroundColor: "#fef2f2", borderColor: "#fca5a5" },
   qText: { fontSize: 16, fontWeight: "700", marginBottom: 15, color: "#1f2937" },
-  optButton: {
-    padding: 14,
-    borderRadius: 10,
-    backgroundColor: "#f8fafc",
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
+
+  optButton: { padding: 14, borderRadius: 10, backgroundColor: "#f8fafc", marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0" },
   optText: { color: "#475569", fontWeight: "500" },
   selectedOpt: { backgroundColor: "#eff6ff", borderColor: "#3b82f6" },
   selectedOptText: { color: "#1d4ed8", fontWeight: "700" },
   correctOptBorder: { borderColor: "#22c55e", borderWidth: 2 },
+
   finishButton: { backgroundColor: "#16a34a", padding: 16, borderRadius: 12, alignItems: "center", marginBottom: 40 },
-  scoreBoard: {
-    backgroundColor: "#eff6ff",
-    padding: 25,
-    borderRadius: 20,
-    alignItems: "center",
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-  },
+
+  scoreBoard: { backgroundColor: "#eff6ff", padding: 25, borderRadius: 20, alignItems: "center", marginTop: 10, borderWidth: 1, borderColor: "#bfdbfe" },
   scoreText: { fontSize: 22, fontWeight: "900", color: "#1e40af", marginVertical: 10 },
   backMenuBtn: { marginTop: 15, padding: 10 },
   backMenuText: { color: "#2563eb", fontWeight: "700", textDecorationLine: "underline" },
