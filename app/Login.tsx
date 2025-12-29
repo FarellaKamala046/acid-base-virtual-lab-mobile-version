@@ -69,13 +69,22 @@ export default function LoginScreen() {
   }, [response]);
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Email dan password tidak boleh kosong!");
+      return;
+    }
+
     setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace("/(tabs)");
     } catch (err: any) {
       console.error(err);
-      setError("Email atau password salah. Coba lagi.");
+      if (err.code === 'auth/invalid-email') {
+        setError("Format emailnya salah.");
+      } else {
+        setError("Email atau password salah. Coba lagi.");
+      }
     }
   };
 

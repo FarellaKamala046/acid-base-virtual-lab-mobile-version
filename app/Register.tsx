@@ -14,6 +14,16 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   const handleRegister = async () => {
+    if (!email || !password || !name) {
+      setError("Data tidak boleh kosong!");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Error! Password minimal 6 karakter.");
+      return;
+    }
+
     setError('');
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);      
@@ -24,7 +34,13 @@ export default function RegisterScreen() {
       router.replace('/(tabs)');
     } catch (err: any) {
       console.error(err);
-      setError('Gagal membuat akun. Pastikan email valid & password lebih dari 6 karakter.');
+      if (err.code === 'auth/invalid-email') {
+        setError("Email-nya nggak valid nih.");
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError("Email ini sudah terdaftar, pakai yang lain yaaa.");
+      } else {
+        setError('Gagal membuat akun. Coba lagi nanti.');
+      }
     }
   };
 
