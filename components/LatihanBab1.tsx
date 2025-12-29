@@ -118,6 +118,7 @@ function KesimpulanDropdown({
 export default function LatihanBab1() {
   const { currentUser, userScores, refreshUserScores } = useAuth() as any;
   const [conclusions, setConclusions] = useState<Record<BeakerKey, string>>({ A: "", B: "", C: "" });
+  const allAnswered = conclusions.A !== "" && conclusions.B !== "" && conclusions.C !== "";
   const [testResults, setTestResults] = useState<Record<BeakerKey, string[]>>({ A: [], B: [], C: [] });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
@@ -312,8 +313,11 @@ export default function LatihanBab1() {
           <View style={styles.actions}>
             <Pressable
               onPress={handleSubmit}
-              disabled={isSubmitted}
-              style={[styles.primaryBtn, isSubmitted && styles.btnDisabled]}
+              disabled={!allAnswered || isSubmitted}
+              style={[
+                styles.primaryBtn,
+                (!allAnswered || isSubmitted) && styles.btnDisabled,
+              ]}
             >
               <Text style={styles.primaryBtnText}>
                 {isSubmitted ? "Jawaban Terkunci" : "Cek Kesimpulan"}
@@ -520,7 +524,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 10, marginTop: 10 },
   primaryBtn: { flex: 1, backgroundColor: "#2563eb", padding: 15, borderRadius: 12, alignItems: "center" },
   primaryBtnText: { color: "white", fontWeight: "800" },
-  btnDisabled: { backgroundColor: "#9ca3af" },
+  btnDisabled: { backgroundColor: "#9ca3af", opacity: 0.7 },
   secondaryBtn: { flexDirection: "row", gap: 8, backgroundColor: "#e5e7eb", padding: 15, borderRadius: 12, alignItems: "center" },
   secondaryBtnText: { fontWeight: "700", color: "#374151" },
 });

@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import { doc, setDoc } from "firebase/firestore";
 import { Check, RefreshCcw, X } from "lucide-react-native";
+import { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
 
 type Step = 
   | { id: string; kind: "input"; prompt: string; answer: string; unit?: string; calculation: (m: number, v: number) => number }
@@ -35,9 +35,15 @@ export default function LatihanBab3() {
   const [userInputs, setUserInputs] = useState<Record<string, string>>({});
   const [stepStatus, setStepStatus] = useState<Record<string, "correct" | "incorrect" | undefined>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const allAnswered = useMemo(() => {
+    return PROBLEM.steps.every((step) => {
+      const v = (userInputs[step.id] ?? "").trim();
+      return v.length > 0;
+    });
+  }, [userInputs]);
   const [quizResult, setQuizResult] = useState<{ score: number } | null>(null);
   const correctAnswers = useMemo(() => {
-    const hPlus = PROBLEM.molarity * PROBLEM.valence;
+  const hPlus = PROBLEM.molarity * PROBLEM.valence;
     return {
       step1: String(hPlus),
       step2: "-log[H+]",
@@ -137,11 +143,13 @@ export default function LatihanBab3() {
 
       <View style={styles.actionRow}>
         <TouchableOpacity 
-          style={[styles.btnMain, isSubmitted && styles.btnDisabled]} 
+          style={[styles.btnMain, (!allAnswered || isSubmitted) && styles.btnDisabled]} 
           onPress={handleSubmit} 
-          disabled={isSubmitted}
+          disabled={!allAnswered || isSubmitted}
         >
-          <Text style={styles.btnMainText}>{isSubmitted ? "Jawaban Terkunci" : "Cek Jawaban"}</Text>
+          <Text style={styles.btnMainText}>
+            {isSubmitted ? "Jawaban Terkunci" : "Cek Jawaban"}
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.btnReset} onPress={handleReset}>
           <RefreshCcw size={18} color="#4b5563" />
@@ -179,7 +187,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: 10, marginTop: 15 },
   btnMain: { flex: 1, backgroundColor: "#2563eb", padding: 15, borderRadius: 12, alignItems: "center" },
   btnMainText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  btnDisabled: { backgroundColor: "#9ca3af" },
+  btnDisabled: { backgroundColor: "#9ca3af", opacity: 0.7 },
   btnReset: { flexDirection: "row", gap: 6, backgroundColor: "#e5e7eb", paddingHorizontal: 15, borderRadius: 12, alignItems: "center" },
   btnResetText: { fontWeight: "700", color: "#4b5563" },
 });1  

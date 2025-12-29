@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { RefreshCcw } from "lucide-react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { doc, setDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../firebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
 
 type TheoryId = "arrhenius" | "bronsted" | "lewis";
 
@@ -241,7 +241,7 @@ export default function LatihanBab2() {
         </View>
 
         {!allPlaced && !isSubmitted && (
-          <Text style={styles.note}>Catatan: semua reaksi harus ditempatkan minimal ke 1 teori dulu.</Text>
+          <Text style={styles.note}>Catatan: semua reaksi harus ditempatkan minimal ke 1 teori terlebih dahulu.</Text>
         )}
       </View>
     </ScrollView>

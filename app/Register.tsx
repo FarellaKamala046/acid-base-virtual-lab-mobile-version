@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth } from '../firebaseConfig';
 
 import LoginImage from '../assets/images/login-regis-gambar2.jpg';
@@ -24,7 +24,7 @@ export default function RegisterScreen() {
       router.replace('/(tabs)');
     } catch (err: any) {
       console.error(err);
-      setError('Gagal membuat akun. Pastikan email valid & password kuat.');
+      setError('Gagal membuat akun. Pastikan email valid & password lebih dari 6 karakter.');
     }
   };
 
