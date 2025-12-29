@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated, TextInput, SafeAreaView, Easing, } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated, TextInput, SafeAreaView, Easing } from "react-native";
 
 const ANIMATION_DURATION = 1100;
 
@@ -46,7 +46,7 @@ export default function VirtualLab() {
   const [isSimulating, setIsSimulating] = useState(false);
 
   const [finalPh, setFinalPh] = useState("?");
-  const acidPour = useRef(new Animated.Value(0)).current; // 0 -> 1 (transform tabung)
+  const acidPour = useRef(new Animated.Value(0)).current;
   const basePour = useRef(new Animated.Value(0)).current;
   const tubeAcidFill = useRef(new Animated.Value(1)).current;
   const tubeBaseFill = useRef(new Animated.Value(1)).current;
@@ -117,7 +117,6 @@ export default function VirtualLab() {
           easing: Easing.inOut(Easing.cubic),
           useNativeDriver: false,
         }),
-        // naikin beaker
         Animated.timing(beakerFill, {
           toValue: nextBeaker,
           duration: ANIMATION_DURATION,
@@ -354,35 +353,35 @@ export default function VirtualLab() {
           <Text style={styles.cardTitle}>Input Larutan</Text>
 
           <Text style={styles.inputLabel}>Asam Klorida (HCl)</Text>
+          <Text style={styles.fieldLabel}>Konsentrasi HCl (M):</Text>
           <TextInput
             style={styles.input}
             value={hclConcentration}
             onChangeText={setHclConcentration}
             keyboardType="numeric"
-            placeholder="Konsentrasi (M)"
           />
+          <Text style={styles.fieldLabel}>Volume HCl (mL):</Text>
           <TextInput
             style={styles.input}
             value={hclVolume}
             onChangeText={setHclVolume}
             keyboardType="numeric"
-            placeholder="Volume (mL)"
           />
 
           <Text style={[styles.inputLabel, { marginTop: 10 }]}>Natrium Hidroksida (NaOH)</Text>
+          <Text style={styles.fieldLabel}>Konsentrasi NaOH (M):</Text>
           <TextInput
             style={styles.input}
             value={naohConcentration}
             onChangeText={setNaohConcentration}
             keyboardType="numeric"
-            placeholder="Konsentrasi (M)"
           />
+          <Text style={styles.fieldLabel}>Volume NaOH (mL):</Text>
           <TextInput
             style={styles.input}
             value={naohVolume}
             onChangeText={setNaohVolume}
             keyboardType="numeric"
-            placeholder="Volume (mL)"
           />
 
           <TouchableOpacity
@@ -620,7 +619,9 @@ const styles = StyleSheet.create({
 
   cardTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15, color: "#1f2937" },
   inputLabel: { fontSize: 14, fontWeight: "600", color: "#4b5563", marginBottom: 5 },
-  
+
+  fieldLabel: { fontSize: 14, color: "#111827", marginBottom: 6 },
+
   input: {
     borderWidth: 1,
     borderColor: "#d1d5db",
