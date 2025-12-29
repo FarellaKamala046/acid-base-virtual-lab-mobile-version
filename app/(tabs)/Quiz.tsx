@@ -80,6 +80,35 @@ export default function QuizScreen() {
     }
   }, [timeLeft, isRunning]);
 
+  const resetAndExit = () => {
+    clearInterval(timerRef.current);
+    setIsRunning(false);
+    setIsSubmitted(false);
+    setFinalScore(0);
+    setTimeLeft(600);
+    setAnswers({});
+    setActiveChapter(null);
+  };
+
+  const confirmExit = () => {
+    if (isSubmitted) {
+      resetAndExit();
+      return;
+    }
+
+    const msg = "Progres kuis Anda akan hilang.";
+    if (Platform.OS === "web") {
+      const ok = (globalThis as any)?.confirm ? (globalThis as any).confirm(`Keluar Kuis?\n${msg}`) : true;
+      if (ok) resetAndExit();
+      return;
+    }
+
+    Alert.alert("Keluar Kuis?", msg, [
+      { text: "Batal", style: "cancel" },
+      { text: "Keluar", onPress: resetAndExit },
+    ]);
+  };
+
   const handleFinish = async () => {
     let correct = 0;
     questions.forEach((q: any) => {
@@ -146,21 +175,9 @@ export default function QuizScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => {
-            if (!isSubmitted) {
-              Alert.alert("Keluar Kuis?", "Progres kuis Anda akan hilang.", [
-                { text: "Batal", style: "cancel" },
-                { text: "Keluar", onPress: () => setActiveChapter(null) },
-              ]);
-            } else {
-              setActiveChapter(null);
-            }
-          }}
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={confirmExit}>
           <ChevronLeft color="#2563eb" size={24} />
-          <Text style={styles.backText}>Keluar</Text>
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
         <View style={styles.timerRow}>
@@ -213,7 +230,7 @@ export default function QuizScreen() {
           <View style={styles.scoreBoard}>
             <Award size={32} color="#1e40af" />
             <Text style={styles.scoreText}>Skor Akhir: {finalScore} / 100</Text>
-            <TouchableOpacity style={styles.backMenuBtn} onPress={() => setActiveChapter(null)}>
+            <TouchableOpacity style={styles.backMenuBtn} onPress={resetAndExit}>
               <Text style={styles.backMenuText}>Kembali ke Daftar Quiz</Text>
             </TouchableOpacity>
           </View>
