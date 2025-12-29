@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 import { HeaderBackButton } from "@react-navigation/elements";
 import { View, Text } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -16,12 +17,10 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    // ✅ pastikan file ini BENERAN ada di assets/fonts
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
 
-  // ✅ pindahkan ke dalam effect + catch biar gak bikin crash startup
   useEffect(() => {
     SplashScreen.preventAutoHideAsync().catch(() => {
       /* ignore */
@@ -31,12 +30,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync().catch(() => {
-        /* ignore */
       });
     }
   }, [loaded]);
 
-  // ✅ jangan throw error di release build, tampilkan pesan
   if (error) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -45,7 +42,6 @@ export default function RootLayout() {
     );
   }
 
-  // ✅ kasih fallback UI (jangan return null)
   if (!loaded) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -55,9 +51,11 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

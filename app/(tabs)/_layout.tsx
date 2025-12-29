@@ -3,12 +3,14 @@ import { Tabs, useRouter, useSegments } from 'expo-router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { auth } from '../../firebaseConfig';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
 export default function TabLayout() {
   const router = useRouter();
   const segments = useSegments();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -35,13 +37,13 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
-          height: 65,
+          height: 65 + insets.bottom,
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           backgroundColor: '#ffffff',
           position: 'absolute',
           elevation: 10,
-          paddingBottom: 10,
+          paddingBottom: 10 + insets.bottom,
           paddingTop: 5,
         },
         tabBarLabelStyle: {
